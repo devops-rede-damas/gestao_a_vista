@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movidesk Tickets</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 0; padding: 32px; background: #0f172a; color: #e2e8f0; }
+        h1 { margin: 0 0 24px; color: #38bdf8; }
+        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .kpi { background: #1e293b; border-radius: 12px; padding: 20px; text-align: center; }
+        .kpi-value { font-size: 2.6rem; font-weight: bold; color: #38bdf8; }
+        .kpi-label { color: #94a3b8; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
+        #tickets-table-container h2 { color: #38bdf8; }
+        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #334155; }
+        th { color: #cbd5e1; font-size: 0.85rem; text-transform: uppercase; }
+        td.empty { text-align: center; color: #94a3b8; }
+
+        /* Ranking de responsáveis */
+        #owner-rank-container { margin-top: 40px; }
+        .owner-rank-title { color: #38bdf8; }
+        .owner-rank-podium { display: flex; justify-content: center; gap: 32px; margin: 20px 0 28px; }
+        .owner-rank-podium-item { background: #1e293b; border-radius: 12px; padding: 18px 24px; text-align: center; min-width: 150px; }
+        .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; }
+        .owner-rank-podium-name { margin-top: 10px; font-weight: bold; }
+        .owner-rank-podium-count { color: #94a3b8; font-size: 0.9rem; }
+        .owner-rank-list { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+        .owner-rank-list .owner-cell { display: flex; align-items: center; gap: 10px; }
+        .owner-rank-list-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+        .bar-wrap { display: flex; align-items: center; }
+        .bar { background: #0ea5e9; height: 18px; border-radius: 8px; min-width: 10px; max-width: 100%; transition: width 0.5s; }
+        .bar-count { font-weight: bold; color: #f1f1f1; margin-left: 8px; white-space: nowrap; }
+        .carousel-page { text-align: center; margin-top: 10px; color: #94a3b8; }
+    </style>
+</head>
+<body>
+    <h1>GESTÃO À VISTA — Movidesk</h1>
+
+    <div class="kpis">
+        <div class="kpi"><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label">Total de Tickets</div></div>
+        <div class="kpi"><div class="kpi-value" id="kpi-novos">0</div><div class="kpi-label">Tickets Novos</div></div>
+        <div class="kpi"><div class="kpi-value" id="kpi-abertos">0</div><div class="kpi-label">Em Atendimento</div></div>
+        <div class="kpi"><div class="kpi-value" id="kpi-parados">0</div><div class="kpi-label">Parados</div></div>
+    </div>
+
+    <div id="tickets-table-container"></div>
+
+    <div id="owner-rank-container"></div>
+
+    <script>
+        // Backend injeta os tickets aqui (mesmo padrão do projeto original).
+        window.tickets = {{ tickets | tojson | safe }};
+    </script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

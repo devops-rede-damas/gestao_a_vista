@@ -1,0 +1,16 @@
+# Segredos — NUNCA versionar o token do Movidesk
+.env
+
+# Ambiente virtual
+venv/
+.venv/
+ven/
+env/
+
+# Cache do Python
+__pycache__/
+*.pyc
+*.pyo
+
+# VS Code
+.vscode/
