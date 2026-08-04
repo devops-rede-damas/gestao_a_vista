@@ -46,6 +46,9 @@ const FIRST_PAGE_INTERVAL = 12000;
 const OTHER_PAGES_INTERVAL = 6000;
 const ITEMS_PER_PAGE = 10;
 
+// Momento da última atualização bem-sucedida (para o aviso de dados desatualizados).
+let lastUpdated = null;
+
 function avatarUrlFor(ownerId, name) {
     return ownerAvatars[ownerId] || "https://ui-avatars.com/api/?name=" + encodeURIComponent(name);
 }
@@ -99,14 +102,31 @@ function renderTicketsTable() {
         </table>`;
 }
 
+// Aviso de dados desatualizados quando o refresh falha.
+function showStaleWarning() {
+    const banner = document.getElementById("stale-banner");
+    if (!banner) return;
+    const quando = lastUpdated ? lastUpdated.toLocaleTimeString("pt-BR") : "-";
+    banner.textContent = `⚠️ Dados podem estar desatualizados — última atualização às ${quando}`;
+    banner.classList.add("visible");
+}
+
+function hideStaleWarning() {
+    const banner = document.getElementById("stale-banner");
+    if (banner) banner.classList.remove("visible");
+}
+
 async function fetchTicketsAndUpdate() {
     try {
         const response = await fetch("/api/tickets");
         if (!response.ok) throw new Error("Erro ao buscar tickets");
         window.tickets = await response.json();
+        lastUpdated = new Date();
+        hideStaleWarning();
         render();
     } catch (error) {
         console.error(error);
+        showStaleWarning();
     }
 }
 
@@ -215,6 +235,7 @@ function render() {
 }
 
 // Render inicial com os tickets injetados pelo backend.
+lastUpdated = new Date();
 render();
 
 // Etapa 5: atualização automática a cada 60 segundos.

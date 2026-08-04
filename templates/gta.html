@@ -33,10 +33,16 @@
         .bar { background: #0ea5e9; height: 18px; border-radius: 8px; min-width: 10px; max-width: 100%; transition: width 0.5s; }
         .bar-count { font-weight: bold; color: #f1f1f1; margin-left: 8px; white-space: nowrap; }
         .carousel-page { text-align: center; margin-top: 10px; color: #94a3b8; }
+
+        /* Aviso de dados desatualizados */
+        .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-weight: bold; }
+        .stale-banner.visible { display: block; }
     </style>
 </head>
 <body>
     <h1>GESTÃO À VISTA — Movidesk</h1>
+
+    <div id="stale-banner" class="stale-banner" role="status" aria-live="polite"></div>
 
     <div class="kpis">
         <div class="kpi"><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label">Total de Tickets</div></div>
