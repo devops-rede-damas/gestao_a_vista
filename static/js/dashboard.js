@@ -53,6 +53,13 @@ const ITEMS_PER_PAGE = 10;
 // Momento da última atualização bem-sucedida (para o aviso de dados desatualizados).
 let lastUpdated = null;
 
+// Classes de cor por status de SLA (definidas no CSS de gta.html).
+const SLA_STATUS_CLASS = {
+    "SLA a Vencer": "sla-avencer",
+    "SLA Vencido": "sla-vencido",
+    "Ticket Novo": "sla-novo",
+};
+
 function avatarUrlFor(ownerId, name) {
     return ownerAvatars[ownerId] || "https://ui-avatars.com/api/?name=" + encodeURIComponent(name);
 }
@@ -87,13 +94,14 @@ function renderTicketsTable() {
             const owner = (t.owner && t.owner.businessName) || "-";
             const respondido = !!t.slaRealResponseDate;
             const slaTexto = respondido ? "Realizada" : (t.slaResponseDateFmt || "-");
-            const statusTexto = respondido ? "Respondido" : "Aguardando 1ª resposta";
+            const status = t.slaStatus || "";
+            const statusClass = SLA_STATUS_CLASS[status] || "";
             return `
                 <tr>
                     <td>#${escapeHtml(t.id)}</td>
                     <td>${escapeHtml(owner)}</td>
                     <td>${slaTexto}</td>
-                    <td>${statusTexto}</td>
+                    <td class="${statusClass}">${escapeHtml(status)}</td>
                 </tr>`;
         }).join("");
 

@@ -22,20 +22,38 @@ _tickets_cache = {"data": None, "timestamp": 0.0}
 _cache_lock = threading.Lock()
 
 
-def _format_br_datetime(value):
-    """Formata a data naive do Movidesk como dd/mm/aaaa HH:MM, sem deslocar o fuso."""
+def _parse_movidesk_datetime(value):
+    """Converte a data naive do Movidesk em datetime; ignora a fração de segundo."""
     if not value:
         return None
     try:
-        dt = datetime.fromisoformat(value.split(".")[0])
+        return datetime.fromisoformat(value.split(".")[0])
     except (ValueError, TypeError):
         return None
-    return dt.strftime("%d/%m/%Y %H:%M")
 
 
-def _format_ticket_dates(tickets):
+def _format_br_datetime(value):
+    """Formata a data naive do Movidesk como dd/mm/aaaa HH:MM, sem deslocar o fuso."""
+    dt = _parse_movidesk_datetime(value)
+    return dt.strftime("%d/%m/%Y %H:%M") if dt else None
+
+
+def _sla_status(ticket, now):
+    """Classifica o SLA da 1a resposta (semantica do piloto, sem o bug de -3h)."""
+    respondido = bool(ticket.get("slaRealResponseDate"))
+    prazo = _parse_movidesk_datetime(ticket.get("slaResponseDate"))
+    if not respondido and prazo is not None:
+        return "SLA a Vencer" if prazo > now else "SLA Vencido"
+    if (ticket.get("baseStatus") or "").lower() == "new":
+        return "Ticket Novo"
+    return ""
+
+
+def _enrich_tickets(tickets):
+    now = datetime.now()
     for ticket in tickets:
         ticket["slaResponseDateFmt"] = _format_br_datetime(ticket.get("slaResponseDate"))
+        ticket["slaStatus"] = _sla_status(ticket, now)
 
 
 def _get_tickets_cached():
@@ -46,7 +64,7 @@ def _get_tickets_cached():
         if _tickets_cache["data"] is not None and age < _CACHE_TTL_SECONDS:
             return _tickets_cache["data"]
         data = get_tickets()
-        _format_ticket_dates(data)
+        _enrich_tickets(data)
         _tickets_cache["data"] = data
         _tickets_cache["timestamp"] = now
         return data
