@@ -2,6 +2,7 @@ import logging
 import os
 import threading
 import time
+from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
@@ -21,6 +22,22 @@ _tickets_cache = {"data": None, "timestamp": 0.0}
 _cache_lock = threading.Lock()
 
 
+def _format_br_datetime(value):
+    """Formata a data naive do Movidesk como dd/mm/aaaa HH:MM, sem deslocar o fuso."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value.split(".")[0])
+    except (ValueError, TypeError):
+        return None
+    return dt.strftime("%d/%m/%Y %H:%M")
+
+
+def _format_ticket_dates(tickets):
+    for ticket in tickets:
+        ticket["slaResponseDateFmt"] = _format_br_datetime(ticket.get("slaResponseDate"))
+
+
 def _get_tickets_cached():
     """Retorna os tickets usando cache com TTL; só armazena respostas bem-sucedidas."""
     now = time.monotonic()
@@ -29,6 +46,7 @@ def _get_tickets_cached():
         if _tickets_cache["data"] is not None and age < _CACHE_TTL_SECONDS:
             return _tickets_cache["data"]
         data = get_tickets()
+        _format_ticket_dates(data)
         _tickets_cache["data"] = data
         _tickets_cache["timestamp"] = now
         return data

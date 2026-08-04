@@ -1,13 +1,6 @@
 // Dashboard "Gestão à Vista" — KPIs, tabela e auto-refresh.
 // Portado da lógica de charts.js do orquestrador_rpa, sem o código morto.
 
-function formatDateTime(value) {
-    if (!value || typeof value !== "string") return "-";
-    const d = new Date(value);
-    if (isNaN(d)) return "-";
-    return d.toLocaleString("pt-BR");
-}
-
 // Escapa texto para uso seguro em innerHTML (evita XSS a partir de dados do Movidesk).
 function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, (c) => ({
@@ -93,7 +86,7 @@ function renderTicketsTable() {
         : tickets.map(t => {
             const owner = (t.owner && t.owner.businessName) || "-";
             const respondido = !!t.slaRealResponseDate;
-            const slaTexto = respondido ? "Realizada" : formatDateTime(t.slaResponseDate);
+            const slaTexto = respondido ? "Realizada" : (t.slaResponseDateFmt || "-");
             const statusTexto = respondido ? "Respondido" : "Aguardando 1ª resposta";
             return `
                 <tr>
