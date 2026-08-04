@@ -70,12 +70,18 @@ def _get_tickets_cached():
         return data
 
 
+def _redact(text):
+    """Remove o token do Movidesk de qualquer texto antes de registrar em log."""
+    token = os.getenv("MOVIDESK_TOKEN")
+    return text.replace(token, "***") if token else text
+
+
 def _fetch_tickets():
     """Consulta o Movidesk isolando a camada web de falhas de rede/HTTP."""
     try:
         return _get_tickets_cached()
     except (requests.RequestException, ValueError) as exc:
-        logger.warning("Falha ao consultar tickets no Movidesk: %s", exc)
+        logger.warning("Falha ao consultar tickets no Movidesk: %s", _redact(str(exc)))
         return None
 
 
