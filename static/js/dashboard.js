@@ -8,6 +8,17 @@ function formatDateTime(value) {
     return d.toLocaleString("pt-BR");
 }
 
+// Escapa texto para uso seguro em innerHTML (evita XSS a partir de dados do Movidesk).
+function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+    }[c]));
+}
+
 function getFirstAndLastName(owner) {
     if (!owner || !owner.businessName) return "Sem Responsável";
     const names = owner.businessName.trim().split(" ");
@@ -55,7 +66,8 @@ function avatarUrlFor(ownerId, name) {
 
 // Fallback quando o arquivo de avatar não existe.
 function avatarOnError(name) {
-    return `this.onerror=null;this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}'`;
+    const safeName = encodeURIComponent(name).replace(/'/g, "%27");
+    return `this.onerror=null;this.src='https://ui-avatars.com/api/?name=${safeName}'`;
 }
 
 function updateKPIs() {
@@ -85,8 +97,8 @@ function renderTicketsTable() {
             const statusTexto = respondido ? "Respondido" : "Aguardando 1ª resposta";
             return `
                 <tr>
-                    <td>#${t.id}</td>
-                    <td>${owner}</td>
+                    <td>#${escapeHtml(t.id)}</td>
+                    <td>${escapeHtml(owner)}</td>
                     <td>${slaTexto}</td>
                     <td>${statusTexto}</td>
                 </tr>`;
@@ -153,7 +165,7 @@ function renderPodium(sortedOwners) {
         return `
             <div class="owner-rank-podium-item">
                 <img src="${url}" alt="avatar" class="owner-rank-podium-avatar" onerror="${avatarOnError(info.name)}">
-                <div class="owner-rank-podium-name">${info.name}</div>
+                <div class="owner-rank-podium-name">${escapeHtml(info.name)}</div>
                 <div class="owner-rank-podium-count">${info.count} tickets</div>
             </div>`;
     }).join("");
@@ -187,7 +199,7 @@ function renderCarouselTable() {
         return `<tr>
             <td class="owner-cell">
                 <img src="${url}" alt="avatar" class="owner-rank-list-avatar" onerror="${avatarOnError(info.name)}">
-                ${info.name}
+                ${escapeHtml(info.name)}
             </td>
             <td>
                 <div class="bar-wrap">
