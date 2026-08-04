@@ -6,42 +6,78 @@
     <title>Movidesk Tickets</title>
     <style>
         * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; margin: 0; padding: 32px; background: #0f172a; color: #e2e8f0; }
-        h1 { margin: 0 0 24px; color: #38bdf8; }
-        .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
-        .kpi { background: #1e293b; border-radius: 12px; padding: 20px; text-align: center; }
-        .kpi-value { font-size: 2.6rem; font-weight: bold; color: #38bdf8; }
-        .kpi-label { color: #94a3b8; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 1px; }
-        #tickets-table-container h2 { color: #38bdf8; }
-        table { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
-        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #334155; }
-        th { color: #cbd5e1; font-size: 0.85rem; text-transform: uppercase; }
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            padding: 24px 32px;
+            background: #181a1b;
+            color: #f1f1f1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-size: 1.2rem;
+        }
+        h1 { text-align: center; margin: 0 0 20px; color: #00bfff; font-size: 2.4rem; flex-shrink: 0; }
+
+        /* Aviso de dados desatualizados */
+        .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 12px 18px; margin: 0 auto 16px; max-width: 1700px; width: 100%; font-weight: bold; }
+        .stale-banner.visible { display: block; }
+
+        /* Estrutura de dois painéis (otimizada para TV) */
+        #dashboard-container { width: 100%; max-width: 1800px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; }
+        #main-flex { display: flex; gap: 32px; justify-content: center; align-items: stretch; width: 100%; flex: 1; }
+        #left-panel { flex: 1; min-width: 500px; max-width: 900px; display: flex; flex-direction: column; }
+        #right-panel { flex: 1; min-width: 500px; max-width: 800px; display: flex; flex-direction: column; gap: 20px; }
+
+        /* KPIs (grade 2x2) */
+        #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
+        .kpi { background: #23272a; border-radius: 12px; padding: 24px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .kpi-value { font-size: 3rem; font-weight: bold; color: #00bfff; }
+        .kpi-label { font-size: 1.1rem; color: #ccc; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Tabela de tickets */
+        #tickets-table-container { background: #23272a; border-radius: 12px; padding: 20px 28px; }
+        #tickets-table-container h2 { color: #00bfff; margin-top: 0; font-size: 1.6rem; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #333; }
+        th { color: #cbd5e1; font-size: 0.95rem; text-transform: uppercase; }
         td.empty { text-align: center; color: #94a3b8; }
 
         /* Status de SLA (cores por significado) */
-        .sla-avencer { color: #f59e0b; font-weight: bold; }
+        .sla-avencer { color: #ffa600; font-weight: bold; }
         .sla-vencido { color: #f87171; font-weight: bold; }
         .sla-novo { color: #93c5fd; font-weight: bold; }
 
-        /* Ranking de responsáveis */
-        #owner-rank-container { margin-top: 40px; }
-        .owner-rank-title { color: #38bdf8; }
-        .owner-rank-podium { display: flex; justify-content: center; gap: 32px; margin: 20px 0 28px; }
-        .owner-rank-podium-item { background: #1e293b; border-radius: 12px; padding: 18px 24px; text-align: center; min-width: 150px; }
-        .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 3px solid #38bdf8; }
-        .owner-rank-podium-name { margin-top: 10px; font-weight: bold; }
-        .owner-rank-podium-count { color: #94a3b8; font-size: 0.9rem; }
-        .owner-rank-list { width: 100%; border-collapse: collapse; background: #1e293b; border-radius: 12px; overflow: hidden; }
+        /* Ranking de responsáveis (painel esquerdo) */
+        #owner-rank-container { background: #23272a; border-radius: 18px; padding: 24px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .owner-rank-title { color: #00bfff; font-size: 1.8rem; margin: 0 0 20px; text-align: center; }
+        .owner-rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-bottom: 28px; }
+        .owner-rank-podium-item { display: flex; flex-direction: column; align-items: center; }
+        .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 4px solid #00bfff; }
+        .owner-rank-podium-name { margin-top: 10px; font-weight: bold; font-size: 1.1rem; }
+        .owner-rank-podium-count { color: #ffa600; font-size: 1.3rem; font-weight: bold; }
+        #carousel-table-container { flex: 1; overflow-y: auto; }
+        .owner-rank-list { width: 100%; border-collapse: collapse; }
+        .owner-rank-list th, .owner-rank-list td { color: #f1f1f1; font-size: 1.15rem; padding: 10px 8px; }
+        .owner-rank-list tr:nth-child(odd) { background: #22242a; }
         .owner-rank-list .owner-cell { display: flex; align-items: center; gap: 10px; }
-        .owner-rank-list-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+        .owner-rank-list-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #181a1b; }
         .bar-wrap { display: flex; align-items: center; }
-        .bar { background: #0ea5e9; height: 18px; border-radius: 8px; min-width: 10px; max-width: 100%; transition: width 0.5s; }
+        .bar { background: #0ea5e9; height: 20px; border-radius: 8px; min-width: 10px; max-width: 100%; transition: width 0.5s; }
         .bar-count { font-weight: bold; color: #f1f1f1; margin-left: 8px; white-space: nowrap; }
-        .carousel-page { text-align: center; margin-top: 10px; color: #94a3b8; }
+        .carousel-page { text-align: center; margin-top: 10px; color: #ccc; }
 
-        /* Aviso de dados desatualizados */
-        .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-weight: bold; }
-        .stale-banner.visible { display: block; }
+        /* Responsividade (telas menores que a TV) */
+        @media (max-width: 1400px) {
+            #main-flex { flex-direction: column; gap: 24px; align-items: stretch; }
+            #left-panel, #right-panel { max-width: none; min-width: auto; }
+        }
+        @media (max-width: 768px) {
+            body { font-size: 1rem; padding: 16px; }
+            h1 { font-size: 2rem; }
+            #kpis { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
+            .kpi-value { font-size: 2.2rem; }
+        }
     </style>
 </head>
 <body>
@@ -49,16 +85,22 @@
 
     <div id="stale-banner" class="stale-banner" role="status" aria-live="polite"></div>
 
-    <div class="kpis">
-        <div class="kpi"><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label">Total de Tickets</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpi-novos">0</div><div class="kpi-label">Tickets Novos</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpi-abertos">0</div><div class="kpi-label">Em Atendimento</div></div>
-        <div class="kpi"><div class="kpi-value" id="kpi-parados">0</div><div class="kpi-label">Parados</div></div>
+    <div id="dashboard-container">
+        <div id="main-flex">
+            <div id="left-panel">
+                <div id="owner-rank-container"></div>
+            </div>
+            <div id="right-panel">
+                <div id="kpis">
+                    <div class="kpi"><div class="kpi-value" id="kpi-total">0</div><div class="kpi-label">Total de Tickets</div></div>
+                    <div class="kpi"><div class="kpi-value" id="kpi-novos">0</div><div class="kpi-label">Tickets Novos</div></div>
+                    <div class="kpi"><div class="kpi-value" id="kpi-abertos">0</div><div class="kpi-label">Em Atendimento</div></div>
+                    <div class="kpi"><div class="kpi-value" id="kpi-parados">0</div><div class="kpi-label">Parados</div></div>
+                </div>
+                <div id="tickets-table-container"></div>
+            </div>
+        </div>
     </div>
-
-    <div id="tickets-table-container"></div>
-
-    <div id="owner-rank-container"></div>
 
     <script>
         // Backend injeta os tickets aqui (mesmo padrão do projeto original).
