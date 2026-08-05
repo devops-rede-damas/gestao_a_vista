@@ -190,8 +190,9 @@ function renderCarouselTable() {
     }
 
     const totalPages = Math.ceil(remainingOwners.length / ITEMS_PER_PAGE);
-    const startIndex = currentCarouselPage * ITEMS_PER_PAGE;
-    const pageData = remainingOwners.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    const perPage = Math.ceil(remainingOwners.length / totalPages); // distribui igual entre as paginas (evita pagina quase vazia)
+    const startIndex = currentCarouselPage * perPage;
+    const pageData = remainingOwners.slice(startIndex, startIndex + perPage);
     const maxCount = Math.max(...remainingOwners.map(([, info]) => info.count), 1);
 
     const rows = pageData.map(([ownerId, info]) => {

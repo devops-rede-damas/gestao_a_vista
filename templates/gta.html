@@ -31,7 +31,7 @@
         body {
             font-family: "Inter", 'Segoe UI', Roboto, Arial, sans-serif;
             margin: 0;
-            padding: 24px 32px;
+            padding: 16px 32px;
             background: var(--rd-bg);
             color: var(--rd-text);
             min-height: 100vh;
@@ -40,7 +40,7 @@
             font-size: 1.2rem;
         }
         /* Cabeçalho institucional (barra Rede Damas) */
-        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; background: linear-gradient(135deg, var(--rd-grad-a) 0%, var(--rd-grad-b) 100%); border: 1px solid rgba(255,255,255,.08); border-radius: var(--rd-radius); padding: 16px 28px; margin: 0 auto 20px; max-width: 1800px; width: 100%; box-shadow: var(--rd-shadow); }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; background: linear-gradient(135deg, var(--rd-grad-a) 0%, var(--rd-grad-b) 100%); border: 1px solid rgba(255,255,255,.08); border-radius: var(--rd-radius); padding: 14px 28px; margin: 0 auto 16px; max-width: 1800px; width: 100%; box-shadow: var(--rd-shadow); }
         .topbar-brand { display: flex; align-items: center; gap: 16px; }
         .topbar-logo { width: 68px; height: 68px; object-fit: contain; }
         .topbar-lockup { display: flex; flex-direction: column; line-height: 1.15; }
@@ -57,18 +57,19 @@
         /* Estrutura de dois painéis (otimizada para TV) */
         #dashboard-container { width: 100%; max-width: 1800px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; }
         #main-flex { display: flex; gap: 32px; justify-content: center; align-items: stretch; width: 100%; flex: 1; }
-        #left-panel { flex: 1; min-width: 500px; max-width: 900px; display: flex; flex-direction: column; }
-        #right-panel { flex: 1; min-width: 500px; max-width: 800px; display: flex; flex-direction: column; gap: 20px; }
+        #left-panel { flex: 9; min-width: 500px; display: flex; flex-direction: column; }
+        #right-panel { flex: 8; min-width: 500px; display: flex; flex-direction: column; gap: 16px; }
 
         /* KPIs (grade 2x2) */
-        #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
-        .kpi { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 24px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
+        .kpi { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 18px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .kpi-value { font-size: 3rem; font-weight: bold; color: var(--rd-accent); }
         .kpi-label { font-size: 1.1rem; color: var(--rd-text-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Tabela de tickets */
-        #tickets-table-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 20px 28px; }
-        #tickets-table-container h2 { color: var(--rd-accent); margin-top: 0; font-size: 1.6rem; }
+        #tickets-table-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 16px 28px; flex: 1; display: flex; flex-direction: column; }
+        #tickets-table-container h2 { color: var(--rd-accent); margin-top: 0; font-size: 1.6rem; flex: 0 0 auto; }
+        #tickets-table-container table { flex: 1 1 auto; height: 100%; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rd-border); }
         th { color: var(--rd-text-dim); font-size: 0.95rem; text-transform: uppercase; }
@@ -80,14 +81,14 @@
         .sla-novo { color: #93c5fd; font-weight: bold; }
 
         /* Ranking de responsáveis (painel esquerdo) */
-        #owner-rank-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 24px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .owner-rank-title { color: var(--rd-accent); font-size: 1.8rem; margin: 0 0 20px; text-align: center; }
-        .owner-rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-bottom: 28px; }
+        #owner-rank-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 18px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .owner-rank-title { color: var(--rd-accent); font-size: 1.8rem; margin: 0 0 14px; text-align: center; }
+        .owner-rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-bottom: 18px; }
         .owner-rank-podium-item { display: flex; flex-direction: column; align-items: center; }
         .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 4px solid var(--rd-accent); }
         .owner-rank-podium-name { margin-top: 10px; font-weight: bold; font-size: 1.1rem; }
         .owner-rank-podium-count { color: var(--rd-count); font-size: 1.3rem; font-weight: bold; }
-        #carousel-table-container { flex: 1; overflow-y: auto; }
+        #carousel-table-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; justify-content: center; }
         .owner-rank-list { width: 100%; border-collapse: collapse; }
         .owner-rank-list th, .owner-rank-list td { color: var(--rd-text); font-size: 1.15rem; padding: 10px 8px; }
         .owner-rank-list tr:nth-child(odd) { background: var(--rd-panel-alt); }
