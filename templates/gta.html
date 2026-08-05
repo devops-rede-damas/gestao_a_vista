@@ -16,12 +16,15 @@
             --rd-border: #1b4a70;      /* bordas/linhas */
             --rd-accent: #4aa6dd;      /* azul da marca, legível no escuro (títulos/KPIs) */
             --rd-bar: #0c77ad;         /* barras do ranking */
-            --rd-count: #ffa600;       /* contagem do pódio (refinado na Etapa 4) */
+            --rd-count: #f97316;       /* contagem do pódio (laranja acento Rede Damas) */
             --rd-text: #eaf2f8;        /* texto principal */
             --rd-text-dim: #9fb6c9;    /* texto secundário */
-            --rd-grad-a: #144272;      /* gradiente do cabeçalho (Etapa 3) */
-            --rd-grad-b: #1a5a9f;
+            --rd-grad-a: #0e3a5c;      /* gradiente do cabeçalho (homogêneo com os painéis) */
+            --rd-grad-b: #135a8f;
             --rd-orange: #f97316;      /* acento (Etapa 4) */
+            --rd-card-border: rgba(255,255,255,.07); /* hairline dos cards */
+            --rd-shadow: 0 2px 8px rgba(0,0,0,.22);  /* profundidade sutil */
+            --rd-radius: 14px;         /* raio padrão dos cards */
         }
 
         * { box-sizing: border-box; }
@@ -36,7 +39,16 @@
             flex-direction: column;
             font-size: 1.2rem;
         }
-        h1 { text-align: center; margin: 0 0 20px; color: var(--rd-accent); font-size: 2.4rem; flex-shrink: 0; }
+        /* Cabeçalho institucional (barra Rede Damas) */
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-shrink: 0; background: linear-gradient(135deg, var(--rd-grad-a) 0%, var(--rd-grad-b) 100%); border: 1px solid rgba(255,255,255,.08); border-radius: var(--rd-radius); padding: 16px 28px; margin: 0 auto 20px; max-width: 1800px; width: 100%; box-shadow: var(--rd-shadow); }
+        .topbar-brand { display: flex; align-items: center; gap: 16px; }
+        .topbar-logo { width: 68px; height: 68px; object-fit: contain; }
+        .topbar-lockup { display: flex; flex-direction: column; line-height: 1.15; }
+        .topbar-name { font-size: 1rem; font-weight: 600; color: rgba(255,255,255,.8); letter-spacing: .5px; }
+        .topbar-title { font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: .5px; }
+        .topbar-clock { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+        .clock-time { font-size: 2rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
+        .clock-updated { font-size: .95rem; color: rgba(255,255,255,.75); }
 
         /* Aviso de dados desatualizados */
         .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 12px 18px; margin: 0 auto 16px; max-width: 1700px; width: 100%; font-weight: bold; }
@@ -50,12 +62,12 @@
 
         /* KPIs (grade 2x2) */
         #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
-        .kpi { background: var(--rd-panel); border-radius: 12px; padding: 24px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .kpi { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 24px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .kpi-value { font-size: 3rem; font-weight: bold; color: var(--rd-accent); }
         .kpi-label { font-size: 1.1rem; color: var(--rd-text-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Tabela de tickets */
-        #tickets-table-container { background: var(--rd-panel); border-radius: 12px; padding: 20px 28px; }
+        #tickets-table-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 20px 28px; }
         #tickets-table-container h2 { color: var(--rd-accent); margin-top: 0; font-size: 1.6rem; }
         table { width: 100%; border-collapse: collapse; }
         th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rd-border); }
@@ -63,12 +75,12 @@
         td.empty { text-align: center; color: var(--rd-text-dim); }
 
         /* Status de SLA (cores por significado) */
-        .sla-avencer { color: #ffa600; font-weight: bold; }
+        .sla-avencer { color: #eab308; font-weight: bold; }
         .sla-vencido { color: #f87171; font-weight: bold; }
         .sla-novo { color: #93c5fd; font-weight: bold; }
 
         /* Ranking de responsáveis (painel esquerdo) */
-        #owner-rank-container { background: var(--rd-panel); border-radius: 18px; padding: 24px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        #owner-rank-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 24px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
         .owner-rank-title { color: var(--rd-accent); font-size: 1.8rem; margin: 0 0 20px; text-align: center; }
         .owner-rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-bottom: 28px; }
         .owner-rank-podium-item { display: flex; flex-direction: column; align-items: center; }
@@ -100,7 +112,19 @@
     </style>
 </head>
 <body>
-    <h1>GESTÃO À VISTA — Movidesk</h1>
+    <header class="topbar">
+        <div class="topbar-brand">
+            <img src="/static/img/logo_branco.svg" alt="Rede Damas" class="topbar-logo">
+            <div class="topbar-lockup">
+                <span class="topbar-name">Rede Damas</span>
+                <span class="topbar-title">GESTÃO À VISTA</span>
+            </div>
+        </div>
+        <div class="topbar-clock">
+            <span id="clock" class="clock-time">--:--:--</span>
+            <span id="clock-updated" class="clock-updated"></span>
+        </div>
+    </header>
 
     <div id="stale-banner" class="stale-banner" role="status" aria-live="polite"></div>
 

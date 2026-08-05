@@ -241,15 +241,32 @@ function startCarousel() {
     })();
 }
 
+// Relógio ao vivo do cabeçalho.
+function updateClock() {
+    const el = document.getElementById("clock");
+    if (el) el.textContent = new Date().toLocaleTimeString("pt-BR");
+}
+
+// Rótulo "Atualizado às HH:MM" no cabeçalho.
+function updateLastUpdatedLabel() {
+    const el = document.getElementById("clock-updated");
+    if (el && lastUpdated) el.textContent = "Atualizado às " + lastUpdated.toLocaleTimeString("pt-BR");
+}
+
 function render() {
     updateKPIs();
     renderTicketsTable();
     renderOwnerRank();
+    updateLastUpdatedLabel();
 }
 
 // Render inicial com os tickets injetados pelo backend.
 lastUpdated = new Date();
 render();
+
+// Relógio do cabeçalho: atualiza a cada segundo.
+updateClock();
+setInterval(updateClock, 1000);
 
 // Etapa 5: atualização automática a cada 60 segundos.
 setInterval(fetchTicketsAndUpdate, 60000);
