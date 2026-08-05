@@ -4,20 +4,39 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Movidesk Tickets</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        :root {
+            /* Identidade Rede Damas — tema escuro institucional */
+            --rd-bg: #071e33;          /* fundo navy institucional */
+            --rd-panel: #0e3a5c;       /* painéis */
+            --rd-panel-alt: #0c3352;   /* linhas alternadas do ranking */
+            --rd-border: #1b4a70;      /* bordas/linhas */
+            --rd-accent: #4aa6dd;      /* azul da marca, legível no escuro (títulos/KPIs) */
+            --rd-bar: #0c77ad;         /* barras do ranking */
+            --rd-count: #ffa600;       /* contagem do pódio (refinado na Etapa 4) */
+            --rd-text: #eaf2f8;        /* texto principal */
+            --rd-text-dim: #9fb6c9;    /* texto secundário */
+            --rd-grad-a: #144272;      /* gradiente do cabeçalho (Etapa 3) */
+            --rd-grad-b: #1a5a9f;
+            --rd-orange: #f97316;      /* acento (Etapa 4) */
+        }
+
         * { box-sizing: border-box; }
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
+            font-family: "Inter", 'Segoe UI', Roboto, Arial, sans-serif;
             margin: 0;
             padding: 24px 32px;
-            background: #181a1b;
-            color: #f1f1f1;
+            background: var(--rd-bg);
+            color: var(--rd-text);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             font-size: 1.2rem;
         }
-        h1 { text-align: center; margin: 0 0 20px; color: #00bfff; font-size: 2.4rem; flex-shrink: 0; }
+        h1 { text-align: center; margin: 0 0 20px; color: var(--rd-accent); font-size: 2.4rem; flex-shrink: 0; }
 
         /* Aviso de dados desatualizados */
         .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 12px 18px; margin: 0 auto 16px; max-width: 1700px; width: 100%; font-weight: bold; }
@@ -31,17 +50,17 @@
 
         /* KPIs (grade 2x2) */
         #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 20px; }
-        .kpi { background: #23272a; border-radius: 12px; padding: 24px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .kpi-value { font-size: 3rem; font-weight: bold; color: #00bfff; }
-        .kpi-label { font-size: 1.1rem; color: #ccc; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        .kpi { background: var(--rd-panel); border-radius: 12px; padding: 24px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .kpi-value { font-size: 3rem; font-weight: bold; color: var(--rd-accent); }
+        .kpi-label { font-size: 1.1rem; color: var(--rd-text-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Tabela de tickets */
-        #tickets-table-container { background: #23272a; border-radius: 12px; padding: 20px 28px; }
-        #tickets-table-container h2 { color: #00bfff; margin-top: 0; font-size: 1.6rem; }
+        #tickets-table-container { background: var(--rd-panel); border-radius: 12px; padding: 20px 28px; }
+        #tickets-table-container h2 { color: var(--rd-accent); margin-top: 0; font-size: 1.6rem; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #333; }
-        th { color: #cbd5e1; font-size: 0.95rem; text-transform: uppercase; }
-        td.empty { text-align: center; color: #94a3b8; }
+        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rd-border); }
+        th { color: var(--rd-text-dim); font-size: 0.95rem; text-transform: uppercase; }
+        td.empty { text-align: center; color: var(--rd-text-dim); }
 
         /* Status de SLA (cores por significado) */
         .sla-avencer { color: #ffa600; font-weight: bold; }
@@ -49,23 +68,23 @@
         .sla-novo { color: #93c5fd; font-weight: bold; }
 
         /* Ranking de responsáveis (painel esquerdo) */
-        #owner-rank-container { background: #23272a; border-radius: 18px; padding: 24px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-        .owner-rank-title { color: #00bfff; font-size: 1.8rem; margin: 0 0 20px; text-align: center; }
+        #owner-rank-container { background: var(--rd-panel); border-radius: 18px; padding: 24px 20px; flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .owner-rank-title { color: var(--rd-accent); font-size: 1.8rem; margin: 0 0 20px; text-align: center; }
         .owner-rank-podium { display: flex; justify-content: center; align-items: flex-end; gap: 40px; margin-bottom: 28px; }
         .owner-rank-podium-item { display: flex; flex-direction: column; align-items: center; }
-        .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 4px solid #00bfff; }
+        .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 4px solid var(--rd-accent); }
         .owner-rank-podium-name { margin-top: 10px; font-weight: bold; font-size: 1.1rem; }
-        .owner-rank-podium-count { color: #ffa600; font-size: 1.3rem; font-weight: bold; }
+        .owner-rank-podium-count { color: var(--rd-count); font-size: 1.3rem; font-weight: bold; }
         #carousel-table-container { flex: 1; overflow-y: auto; }
         .owner-rank-list { width: 100%; border-collapse: collapse; }
-        .owner-rank-list th, .owner-rank-list td { color: #f1f1f1; font-size: 1.15rem; padding: 10px 8px; }
-        .owner-rank-list tr:nth-child(odd) { background: #22242a; }
+        .owner-rank-list th, .owner-rank-list td { color: var(--rd-text); font-size: 1.15rem; padding: 10px 8px; }
+        .owner-rank-list tr:nth-child(odd) { background: var(--rd-panel-alt); }
         .owner-rank-list .owner-cell { display: flex; align-items: center; gap: 10px; }
-        .owner-rank-list-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: #181a1b; }
+        .owner-rank-list-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; background: var(--rd-bg); }
         .bar-wrap { display: flex; align-items: center; }
-        .bar { background: #0ea5e9; height: 20px; border-radius: 8px; min-width: 10px; max-width: 100%; transition: width 0.5s; }
-        .bar-count { font-weight: bold; color: #f1f1f1; margin-left: 8px; white-space: nowrap; }
-        .carousel-page { text-align: center; margin-top: 10px; color: #ccc; }
+        .bar { background: var(--rd-bar); height: 20px; border-radius: 8px; min-width: 10px; max-width: 100%; transition: width 0.5s; }
+        .bar-count { font-weight: bold; color: var(--rd-text); margin-left: 8px; white-space: nowrap; }
+        .carousel-page { text-align: center; margin-top: 10px; color: var(--rd-text-dim); }
 
         /* Responsividade (telas menores que a TV) */
         @media (max-width: 1400px) {
