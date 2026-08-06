@@ -1,6 +1,9 @@
 # Segredos — NUNCA versionar o token do Movidesk
 .env
 
+# Tokens de acesso por setor (capability URLs) — segredos, NUNCA versionar
+config/tokens.json
+
 # Ambiente virtual
 venv/
 .venv/

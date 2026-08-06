@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, render_template, request
 
 from services.movidesk_api import get_tickets
-from core.sectors import available_sectors
+from core.tokens import resolve_sector, ensure_token
 
 load_dotenv()
 
@@ -88,21 +88,22 @@ def _fetch_tickets(setor="ti"):
 @app.route("/gv_movidesk")
 def gv_movidesk():
     tickets = _fetch_tickets("ti")
-    return render_template("gta.html", tickets=tickets or [], setor="ti")
+    return render_template("gta.html", tickets=tickets or [], token=ensure_token("ti"))
 
 
-@app.route("/painel/<setor>")
-def painel(setor):
-    if setor not in available_sectors():
+@app.route("/painel/<token>")
+def painel(token):
+    setor = resolve_sector(token)
+    if setor is None:
         abort(404)
     tickets = _fetch_tickets(setor)
-    return render_template("gta.html", tickets=tickets or [], setor=setor)
+    return render_template("gta.html", tickets=tickets or [], token=token)
 
 
 @app.route("/api/tickets")
 def api_tickets():
-    setor = request.args.get("setor", "ti")
-    if setor not in available_sectors():
+    setor = resolve_sector(request.args.get("token"))
+    if setor is None:
         abort(404)
     tickets = _fetch_tickets(setor)
     if tickets is None:
