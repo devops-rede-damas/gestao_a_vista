@@ -1,0 +1,26 @@
+{
+  "_descricao": "Fonte unica dos setores do painel Gestao a Vista. Cada setor vira um filtro no Movidesk. Para adicionar um setor, copie um bloco em 'setores' e ajuste. Chaves iniciadas por '_' sao comentarios/metadados e sao ignoradas pelo sistema.",
+  "_formato": {
+    "_comum.excluir_base_status": "status de ticket ignorados em TODOS os setores (ex.: ja resolvidos)",
+    "setores.<chave>.nome": "nome de exibicao do setor",
+    "setores.<chave>.regras": "lista OR: cada item e uma equipe (ownerTeam); com 'responsaveis' opcional restringe aquela equipe as pessoas listadas (owner/businessName)",
+    "setores.<chave>.excluir_clientes": "opcional: ids de clientes a excluir do setor"
+  },
+
+  "_comum": {
+    "excluir_base_status": ["Resolved", "Closed", "Canceled"]
+  },
+
+  "setores": {
+    "ti": {
+      "nome": "TI do CAD",
+      "regras": [
+        { "equipe": "Atendimento e Suporte CSC TIC" },
+        { "equipe": "Atendimento CAD CPQ" },
+        { "equipe": "Atendimento Admissão Digital", "responsaveis": ["Daniel Souza", "Mailonga Alburquerque Ferreira"] },
+        { "equipe": "Atendimento CSC Matrículas", "responsaveis": ["Murilo Cunha", "Ricaelle Mesquita Menezes"] }
+      ],
+      "excluir_clientes": ["404751698"]
+    }
+  }
+}
