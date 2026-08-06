@@ -21,6 +21,12 @@
         { "equipe": "Atendimento CSC Matrículas", "responsaveis": ["Murilo Cunha", "Ricaelle Mesquita Menezes"] }
       ],
       "excluir_clientes": ["404751698"]
+    },
+    "juridico": {
+      "nome": "Jurídico",
+      "regras": [
+        { "equipe": "Atendimento Jurídico" }
+      ]
     }
   }
 }

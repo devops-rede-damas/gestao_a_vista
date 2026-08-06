@@ -147,8 +147,9 @@
     </div>
 
     <script>
-        // Backend injeta os tickets aqui (mesmo padrão do projeto original).
+        // Backend injeta os tickets e o setor atual aqui.
         window.tickets = {{ tickets | tojson | safe }};
+        window.setor = {{ setor | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>

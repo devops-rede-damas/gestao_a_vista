@@ -6,9 +6,10 @@ from datetime import datetime
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template
+from flask import Flask, abort, jsonify, render_template, request
 
 from services.movidesk_api import get_tickets
+from core.sectors import available_sectors
 
 load_dotenv()
 
@@ -16,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Cache em memória com TTL para reduzir chamadas ao Movidesk (várias telas/refreshes).
+# Cache em memória com TTL, por setor, para reduzir chamadas ao Movidesk (várias telas/refreshes).
 _CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "30"))
-_tickets_cache = {"data": None, "timestamp": 0.0}
+_tickets_cache = {}  # setor -> {"data": ..., "timestamp": ...}
 _cache_lock = threading.Lock()
 
 
@@ -56,17 +57,16 @@ def _enrich_tickets(tickets):
         ticket["slaStatus"] = _sla_status(ticket, now)
 
 
-def _get_tickets_cached():
-    """Retorna os tickets usando cache com TTL; só armazena respostas bem-sucedidas."""
+def _get_tickets_cached(setor="ti"):
+    """Retorna os tickets do setor usando cache com TTL; só armazena respostas bem-sucedidas."""
     now = time.monotonic()
     with _cache_lock:
-        age = now - _tickets_cache["timestamp"]
-        if _tickets_cache["data"] is not None and age < _CACHE_TTL_SECONDS:
-            return _tickets_cache["data"]
-        data = get_tickets()
+        entry = _tickets_cache.get(setor)
+        if entry and entry["data"] is not None and (now - entry["timestamp"]) < _CACHE_TTL_SECONDS:
+            return entry["data"]
+        data = get_tickets(setor)
         _enrich_tickets(data)
-        _tickets_cache["data"] = data
-        _tickets_cache["timestamp"] = now
+        _tickets_cache[setor] = {"data": data, "timestamp": now}
         return data
 
 
@@ -76,24 +76,35 @@ def _redact(text):
     return text.replace(token, "***") if token else text
 
 
-def _fetch_tickets():
+def _fetch_tickets(setor="ti"):
     """Consulta o Movidesk isolando a camada web de falhas de rede/HTTP."""
     try:
-        return _get_tickets_cached()
+        return _get_tickets_cached(setor)
     except (requests.RequestException, ValueError) as exc:
-        logger.warning("Falha ao consultar tickets no Movidesk: %s", _redact(str(exc)))
+        logger.warning("Falha ao consultar tickets no Movidesk (setor=%s): %s", setor, _redact(str(exc)))
         return None
 
 
 @app.route("/gv_movidesk")
 def gv_movidesk():
-    tickets = _fetch_tickets()
-    return render_template("gta.html", tickets=tickets or [])
+    tickets = _fetch_tickets("ti")
+    return render_template("gta.html", tickets=tickets or [], setor="ti")
+
+
+@app.route("/painel/<setor>")
+def painel(setor):
+    if setor not in available_sectors():
+        abort(404)
+    tickets = _fetch_tickets(setor)
+    return render_template("gta.html", tickets=tickets or [], setor=setor)
 
 
 @app.route("/api/tickets")
 def api_tickets():
-    tickets = _fetch_tickets()
+    setor = request.args.get("setor", "ti")
+    if setor not in available_sectors():
+        abort(404)
+    tickets = _fetch_tickets(setor)
     if tickets is None:
         return jsonify({"error": "Não foi possível consultar o Movidesk."}), 503
     return jsonify(tickets)

@@ -131,7 +131,8 @@ function hideStaleWarning() {
 
 async function fetchTicketsAndUpdate() {
     try {
-        const response = await fetch("/api/tickets");
+        const setor = window.setor || "ti";
+        const response = await fetch("/api/tickets?setor=" + encodeURIComponent(setor));
         if (!response.ok) throw new Error("Erro ao buscar tickets");
         window.tickets = await response.json();
         lastUpdated = new Date();
