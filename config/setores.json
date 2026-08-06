@@ -27,6 +27,18 @@
       "regras": [
         { "equipe": "Atendimento Jurídico" }
       ]
+    },
+    "compras": {
+      "nome": "Compras",
+      "regras": [
+        { "equipe": "Atendimento CSC Compras" }
+      ]
+    },
+    "fiscal": {
+      "nome": "Fiscal",
+      "regras": [
+        { "equipe": "Atendimento Fiscal" }
+      ]
     }
   }
 }
