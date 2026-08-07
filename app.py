@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, render_template, request
 
 from services.movidesk_api import get_tickets
+from core.sectors import sector_display
 from core.tokens import resolve_sector, ensure_token
 
 load_dotenv()
@@ -88,7 +89,7 @@ def _fetch_tickets(setor="ti"):
 @app.route("/gv_movidesk")
 def gv_movidesk():
     tickets = _fetch_tickets("ti")
-    return render_template("gta.html", tickets=tickets or [], token=ensure_token("ti"))
+    return render_template("gta.html", tickets=tickets or [], token=ensure_token("ti"), exibicao=sector_display("ti"))
 
 
 @app.route("/painel/<token>")
@@ -97,7 +98,7 @@ def painel(token):
     if setor is None:
         abort(404)
     tickets = _fetch_tickets(setor)
-    return render_template("gta.html", tickets=tickets or [], token=token)
+    return render_template("gta.html", tickets=tickets or [], token=token, exibicao=sector_display(setor))
 
 
 @app.route("/api/tickets")

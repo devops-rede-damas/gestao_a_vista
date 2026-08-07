@@ -39,6 +39,20 @@ def available_sectors(cfg=None):
     return _sector_keys(cfg or load_config())
 
 
+def sector_display(setor, cfg=None):
+    """Metadados de exibição de um setor: modo ('agregado'|'por_equipe') e as equipes a exibir.
+
+    'agregado' (padrão) preserva o comportamento clássico (tudo numa tela). Em
+    'por_equipe' a tela alterna cada equipe do setor; as equipes vêm dos nomes
+    exatos em 'regras' (itens 'equipe'), na ordem em que aparecem.
+    """
+    cfg = cfg or load_config()
+    dados = cfg["setores"].get(setor, {}) if not setor.startswith("_") else {}
+    modo = dados.get("exibicao", "agregado")
+    equipes = [r["equipe"] for r in (dados.get("regras") or []) if r.get("equipe")]
+    return {"modo": modo, "equipes": equipes}
+
+
 def _escape(value):
     """Escapa aspas simples para literais OData (' -> '')."""
     return str(value).replace("'", "''")

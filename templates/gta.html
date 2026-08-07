@@ -50,6 +50,12 @@
         .clock-time { font-size: 2rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
         .clock-updated { font-size: .95rem; color: rgba(255,255,255,.75); }
 
+        /* Indicador da equipe atual (modo por_equipe) */
+        .team-badge { display: none; flex-direction: column; align-items: center; line-height: 1.2; text-align: center; }
+        .team-badge.visible { display: flex; }
+        .team-badge-name { font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: .5px; }
+        .team-badge-pos { font-size: 1rem; font-weight: 700; color: var(--rd-count); letter-spacing: 1px; }
+
         /* Aviso de dados desatualizados */
         .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 12px 18px; margin: 0 auto 16px; max-width: 1700px; width: 100%; font-weight: bold; }
         .stale-banner.visible { display: block; }
@@ -121,6 +127,10 @@
                 <span class="topbar-title">GESTÃO À VISTA</span>
             </div>
         </div>
+        <div id="team-badge" class="team-badge">
+            <span id="team-badge-name" class="team-badge-name"></span>
+            <span id="team-badge-pos" class="team-badge-pos"></span>
+        </div>
         <div class="topbar-clock">
             <span id="clock" class="clock-time">--:--:--</span>
             <span id="clock-updated" class="clock-updated"></span>
@@ -150,6 +160,7 @@
         // Backend injeta os tickets e o token (opaco) do painel atual aqui.
         window.tickets = {{ tickets | tojson | safe }};
         window.token = {{ token | tojson | safe }};
+        window.exibicao = {{ exibicao | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 </body>

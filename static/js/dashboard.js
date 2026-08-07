@@ -50,6 +50,23 @@ const FIRST_PAGE_INTERVAL = 12000;
 const OTHER_PAGES_INTERVAL = 6000;
 const ITEMS_PER_PAGE = 10;
 
+// Modo de exibição do setor (injetado pelo backend em window.exibicao).
+// "por_equipe" faz a tela alternar cada equipe do setor; caso contrário, agrega tudo (padrão).
+const exibicao = window.exibicao || { modo: "agregado", equipes: [] };
+const teamsList = exibicao.equipes || [];
+const porEquipe = exibicao.modo === "por_equipe" && teamsList.length > 1;
+let currentTeamIndex = 0;
+let teamInterval = null;
+const TEAM_INTERVAL = 15000;
+
+// Tickets da "visão" atual: a equipe em foco (modo por_equipe) ou a lista inteira (agregado).
+function currentTickets() {
+    const all = window.tickets || [];
+    if (!porEquipe) return all;
+    const team = teamsList[currentTeamIndex];
+    return all.filter(t => (t.ownerTeam || "") === team);
+}
+
 // Momento da última atualização bem-sucedida (para o aviso de dados desatualizados).
 let lastUpdated = null;
 
@@ -71,7 +88,7 @@ function avatarOnError(name) {
 }
 
 function updateKPIs() {
-    const tickets = window.tickets || [];
+    const tickets = currentTickets();
     const byStatus = (s) =>
         tickets.filter(t => t.baseStatus && t.baseStatus.toLowerCase() === s).length;
 
@@ -83,7 +100,7 @@ function updateKPIs() {
 
 function renderTicketsTable() {
     // Tickets novos ou ainda sem 1ª resposta registrada.
-    const tickets = (window.tickets || []).filter(t =>
+    const tickets = currentTickets().filter(t =>
         (t.baseStatus && t.baseStatus.toLowerCase() === "new") ||
         !t.slaRealResponseDate
     );
@@ -145,7 +162,7 @@ async function fetchTicketsAndUpdate() {
 }
 
 function renderOwnerRank() {
-    const tickets = window.tickets || [];
+    const tickets = currentTickets();
     const owners = {};
     tickets.forEach(t => {
         const ownerId = t.owner && t.owner.id ? t.owner.id : "sem_responsavel";
@@ -255,16 +272,41 @@ function updateLastUpdatedLabel() {
     if (el && lastUpdated) el.textContent = "Atualizado às " + lastUpdated.toLocaleTimeString("pt-BR");
 }
 
+// Mostra qual equipe está no ar (só no modo por_equipe).
+function updateTeamBadge() {
+    const badge = document.getElementById("team-badge");
+    if (!badge) return;
+    if (!porEquipe) {
+        badge.classList.remove("visible");
+        return;
+    }
+    document.getElementById("team-badge-name").textContent = teamsList[currentTeamIndex];
+    document.getElementById("team-badge-pos").textContent = `${currentTeamIndex + 1} / ${teamsList.length}`;
+    badge.classList.add("visible");
+}
+
+// Rodízio de equipes: troca a equipe em foco em intervalo fixo (modo por_equipe).
+function startTeamCarousel() {
+    if (!porEquipe) return;
+    if (teamInterval) clearInterval(teamInterval);
+    teamInterval = setInterval(() => {
+        currentTeamIndex = (currentTeamIndex + 1) % teamsList.length;
+        render();
+    }, TEAM_INTERVAL);
+}
+
 function render() {
     updateKPIs();
     renderTicketsTable();
     renderOwnerRank();
+    updateTeamBadge();
     updateLastUpdatedLabel();
 }
 
 // Render inicial com os tickets injetados pelo backend.
 lastUpdated = new Date();
 render();
+startTeamCarousel();
 
 // Relógio do cabeçalho: atualiza a cada segundo.
 updateClock();

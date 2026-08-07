@@ -3,6 +3,7 @@
   "_formato": {
     "_comum.excluir_base_status": "status de ticket ignorados em TODOS os setores (ex.: ja resolvidos)",
     "setores.<chave>.nome": "nome de exibicao do setor",
+    "setores.<chave>.exibicao": "opcional: 'agregado' (padrao, mistura tudo numa tela) ou 'por_equipe' (a tela alterna cada equipe do setor em rodizio)",
     "setores.<chave>.regras": "lista OR: cada item e uma equipe (ownerTeam); com 'responsaveis' opcional restringe aquela equipe as pessoas listadas (owner/businessName)",
     "setores.<chave>.excluir_clientes": "opcional: ids de clientes a excluir do setor"
   },
@@ -25,8 +26,10 @@
     },
     "juridico": {
       "nome": "Jurídico",
+      "exibicao": "por_equipe",
       "regras": [
-        { "equipe": "Atendimento Jurídico" }
+        { "equipe": "Atendimento Jurídico" },
+        { "equipe": "Atendimento - Escritório Helder Nascimento ADV" }
       ]
     },
     "compras": {
