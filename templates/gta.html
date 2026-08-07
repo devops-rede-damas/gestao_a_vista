@@ -34,7 +34,8 @@
             padding: 16px 32px;
             background: var(--rd-bg);
             color: var(--rd-text);
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden;
             display: flex;
             flex-direction: column;
             font-size: 1.2rem;
@@ -61,23 +62,32 @@
         .stale-banner.visible { display: block; }
 
         /* Estrutura de dois painéis (otimizada para TV) */
-        #dashboard-container { width: 100%; max-width: 1800px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; }
-        #main-flex { display: flex; gap: 32px; justify-content: center; align-items: stretch; width: 100%; flex: 1; }
-        #left-panel { flex: 9; min-width: 500px; display: flex; flex-direction: column; }
-        #right-panel { flex: 8; min-width: 500px; display: flex; flex-direction: column; gap: 16px; }
+        #dashboard-container { width: 100%; max-width: 1800px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; min-height: 0; }
+        #main-flex { display: flex; gap: 32px; justify-content: center; align-items: stretch; width: 100%; flex: 1; min-height: 0; }
+        #left-panel { flex: 9; min-width: 500px; display: flex; flex-direction: column; min-height: 0; }
+        #right-panel { flex: 8; min-width: 500px; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
 
         /* KPIs (grade 2x2) */
-        #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; }
-        .kpi { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 18px 28px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .kpi-value { font-size: 3rem; font-weight: bold; color: var(--rd-accent); }
-        .kpi-label { font-size: 1.1rem; color: var(--rd-text-dim); margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+        #kpis { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 12px; }
+        .kpi { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 12px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .kpi-value { font-size: 2.4rem; font-weight: bold; color: var(--rd-accent); }
+        .kpi-label { font-size: 1rem; color: var(--rd-text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Tabela de tickets */
-        #tickets-table-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 16px 28px; flex: 1; display: flex; flex-direction: column; }
-        #tickets-table-container h2 { color: var(--rd-accent); margin-top: 0; font-size: 1.6rem; flex: 0 0 auto; }
-        #tickets-table-container table { flex: 1 1 auto; height: 100%; }
+        #tickets-table-container { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 16px 28px; flex: 1; min-height: 0; overflow: hidden; }
+        #tickets-table-container h2 { color: var(--rd-accent); margin-top: 0; font-size: 1.6rem; }
+        /* Linhas em div (flex) com altura fixa: nunca esticam, independentemente da quantidade. */
+        .tickets-list { display: flex; flex-direction: column; }
+        .tk-row { display: flex; align-items: center; height: 42px; flex: 0 0 auto; padding: 0 12px; border-bottom: 1px solid var(--rd-border); }
+        .tk-head { color: var(--rd-text-dim); font-size: 0.95rem; text-transform: uppercase; }
+        .tk-num { flex: 0 0 16%; }
+        .tk-owner { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .tk-sla { flex: 0 0 30%; }
+        .tk-status { flex: 0 0 22%; }
+        .tk-empty { text-align: center; color: var(--rd-text-dim); padding: 16px; }
+        #tickets-table-container .carousel-page { margin-top: 8px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rd-border); }
+        th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rd-border); }
         th { color: var(--rd-text-dim); font-size: 0.95rem; text-transform: uppercase; }
         td.empty { text-align: center; color: var(--rd-text-dim); }
 
@@ -94,7 +104,7 @@
         .owner-rank-podium-avatar { width: 84px; height: 84px; border-radius: 50%; object-fit: cover; border: 4px solid var(--rd-accent); }
         .owner-rank-podium-name { margin-top: 10px; font-weight: bold; font-size: 1.1rem; }
         .owner-rank-podium-count { color: var(--rd-count); font-size: 1.3rem; font-weight: bold; }
-        #carousel-table-container { flex: 1; overflow-y: auto; display: flex; flex-direction: column; justify-content: center; }
+        #carousel-table-container { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: flex-start; }
         .owner-rank-list { width: 100%; border-collapse: collapse; }
         .owner-rank-list th, .owner-rank-list td { color: var(--rd-text); font-size: 1.15rem; padding: 10px 8px; }
         .owner-rank-list tr:nth-child(odd) { background: var(--rd-panel-alt); }
@@ -105,8 +115,8 @@
         .bar-count { font-weight: bold; color: var(--rd-text); margin-left: 8px; white-space: nowrap; }
         .carousel-page { text-align: center; margin-top: 10px; color: var(--rd-text-dim); }
 
-        /* Responsividade (telas menores que a TV) */
-        @media (max-width: 1400px) {
+        /* Responsividade (telas realmente estreitas; a TV e laptops largos ficam lado a lado) */
+        @media (max-width: 1100px) {
             #main-flex { flex-direction: column; gap: 24px; align-items: stretch; }
             #left-panel, #right-panel { max-width: none; min-width: auto; }
         }
