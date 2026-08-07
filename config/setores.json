@@ -41,8 +41,8 @@
         { "equipe": "Atendimento Central de Notas" }
       ]
     },
-    "rh": {
-      "nome": "RH",
+    "dp": {
+      "nome": "DP",
       "regras": [
         { "contem": "CSC DP" },
         { "equipe": "Atendimento ADM Pessoal CSC" }
