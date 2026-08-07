@@ -45,11 +45,13 @@ def _escape(value):
 
 
 def _rule_clause(rule):
-    """Cláusula de UMA regra: a equipe, opcionalmente restrita a alguns responsáveis."""
-    equipe = rule.get("equipe")
-    if not equipe:
-        raise SectorConfigError("Cada item de 'regras' precisa de 'equipe'.")
-    team = f"ownerTeam eq '{_escape(equipe)}'"
+    """Clausula de UMA regra: equipe exata ('equipe') ou padrao de nome ('contem'), opcionalmente restrita a responsaveis."""
+    if rule.get("equipe"):
+        team = f"ownerTeam eq '{_escape(rule['equipe'])}'"
+    elif rule.get("contem"):
+        team = f"contains(ownerTeam, '{_escape(rule['contem'])}')"
+    else:
+        raise SectorConfigError("Cada item de 'regras' precisa de 'equipe' ou 'contem'.")
     responsaveis = rule.get("responsaveis") or []
     if not responsaveis:
         return f"({team})"

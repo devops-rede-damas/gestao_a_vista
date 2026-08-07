@@ -39,6 +39,20 @@
       "regras": [
         { "equipe": "Atendimento Fiscal" }
       ]
+    },
+    "rh": {
+      "nome": "RH",
+      "regras": [
+        { "contem": "CSC DP" },
+        { "equipe": "Atendimento ADM Pessoal CSC" }
+      ]
+    },
+    "financeiro": {
+      "nome": "Financeiro",
+      "regras": [
+        { "contem": "CSC Financeiro" },
+        { "equipe": "Atendimento CSC Tesouraria" }
+      ]
     }
   }
 }
