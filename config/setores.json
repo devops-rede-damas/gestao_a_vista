@@ -37,7 +37,8 @@
     "fiscal": {
       "nome": "Fiscal",
       "regras": [
-        { "equipe": "Atendimento Fiscal" }
+        { "equipe": "Atendimento Fiscal" },
+        { "equipe": "Atendimento Central de Notas" }
       ]
     },
     "rh": {
@@ -64,6 +65,19 @@
       "nome": "Saúde e Segurança",
       "regras": [
         { "contem": "Saúde e Segurança" }
+      ]
+    },
+    "contabil": {
+      "nome": "Contábil",
+      "regras": [
+        { "equipe": "Atendimento Contábil" }
+      ]
+    },
+    "controladoria": {
+      "nome": "Controladoria",
+      "regras": [
+        { "equipe": "Atendimento Controladoria" },
+        { "equipe": "Atendimento CSC Power BI" }
       ]
     }
   }
