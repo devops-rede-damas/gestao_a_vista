@@ -79,6 +79,12 @@
         { "equipe": "Atendimento Controladoria" },
         { "equipe": "Atendimento CSC Power BI" }
       ]
+    },
+    "educacional": {
+      "nome": "Educacional",
+      "regras": [
+        { "contem": "Educacional" }
+      ]
     }
   }
 }
