@@ -53,6 +53,18 @@
         { "contem": "CSC Financeiro" },
         { "equipe": "Atendimento CSC Tesouraria" }
       ]
+    },
+    "marketing": {
+      "nome": "Marketing",
+      "regras": [
+        { "contem": "Marketing" }
+      ]
+    },
+    "saude_seguranca": {
+      "nome": "Saúde e Segurança",
+      "regras": [
+        { "contem": "Saúde e Segurança" }
+      ]
     }
   }
 }
