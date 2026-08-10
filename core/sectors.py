@@ -50,7 +50,7 @@ def sector_display(setor, cfg=None):
     dados = cfg["setores"].get(setor, {}) if not setor.startswith("_") else {}
     modo = dados.get("exibicao", "agregado")
     equipes = [r["equipe"] for r in (dados.get("regras") or []) if r.get("equipe")]
-    return {"modo": modo, "equipes": equipes}
+    return {"nome": dados.get("nome", setor), "modo": modo, "equipes": equipes}
 
 
 def _escape(value):

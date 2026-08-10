@@ -38,14 +38,19 @@ body {
 .topbar-name { font-size: 1rem; font-weight: 600; color: rgba(255,255,255,.8); letter-spacing: .5px; }
 .topbar-title { font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: .5px; }
 .topbar-clock { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
-.clock-time { font-size: 2rem; font-weight: 800; color: #fff; font-variant-numeric: tabular-nums; }
-.clock-updated { font-size: .95rem; color: rgba(255,255,255,.75); }
+.clock-time { font-size: 1.55rem; font-weight: 700; color: rgba(255,255,255,.92); font-variant-numeric: tabular-nums; }
+.clock-updated { font-size: .9rem; color: rgba(255,255,255,.7); }
+
+/* Centro do cabecalho: nome do departamento (fixo) + equipe (rodizio no modo por_equipe) */
+.topbar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; text-align: center; gap: 6px; }
+/* Setor: chip discreto (secundario ao nome do projeto, nunca maior que ele) */
+.panel-dept { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 16px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); }
 
 /* Indicador da equipe atual (modo por_equipe) */
 .team-badge { display: none; flex-direction: column; align-items: center; line-height: 1.2; text-align: center; }
 .team-badge.visible { display: flex; }
-.team-badge-name { font-size: 1.6rem; font-weight: 800; color: #fff; letter-spacing: .5px; }
-.team-badge-pos { font-size: 1rem; font-weight: 700; color: var(--rd-count); letter-spacing: 1px; }
+.team-badge-name { font-size: 1.05rem; font-weight: 600; color: var(--rd-text-dim); letter-spacing: .3px; }
+.team-badge-pos { font-size: .85rem; font-weight: 800; color: var(--rd-count); letter-spacing: 1px; }
 
 /* Aviso de dados desatualizados */
 .stale-banner { display: none; background: #7c2d12; color: #fed7aa; border: 1px solid #ea580c; border-radius: 8px; padding: 12px 18px; margin: 0 auto 16px; max-width: 1700px; width: 100%; font-weight: bold; }

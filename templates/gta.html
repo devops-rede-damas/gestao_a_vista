@@ -18,9 +18,12 @@
                 <span class="topbar-title">GESTÃO À VISTA</span>
             </div>
         </div>
-        <div id="team-badge" class="team-badge">
-            <span id="team-badge-name" class="team-badge-name"></span>
-            <span id="team-badge-pos" class="team-badge-pos"></span>
+        <div class="topbar-center">
+            {% if exibicao and exibicao.nome %}<span class="panel-dept">{{ exibicao.nome }}</span>{% endif %}
+            <div id="team-badge" class="team-badge">
+                <span id="team-badge-name" class="team-badge-name"></span>
+                <span id="team-badge-pos" class="team-badge-pos"></span>
+            </div>
         </div>
         <div class="topbar-clock">
             <span id="clock" class="clock-time">--:--:--</span>
