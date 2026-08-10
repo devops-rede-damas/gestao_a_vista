@@ -19,8 +19,7 @@
         { "equipe": "Atendimento e Suporte CSC TIC" },
         { "equipe": "Atendimento CAD CPQ" },
         { "equipe": "Atendimento Admissão Digital", "responsaveis": ["Daniel Souza", "Mailonga Alburquerque Ferreira"] },
-        { "equipe": "Atendimento CSC Matrículas", "responsaveis": ["Murilo Cunha", "Ricaelle Mesquita Menezes"] },
-        { "equipe": "Atendimento do Encarregado de Dados" }
+        { "equipe": "Atendimento CSC Matrículas", "responsaveis": ["Murilo Cunha", "Ricaelle Mesquita Menezes"] }
       ],
       "excluir_clientes": ["404751698"]
     },
