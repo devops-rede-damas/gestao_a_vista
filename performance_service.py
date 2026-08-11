@@ -1,9 +1,9 @@
 """Coletor do Dashboard 2: busca a fila + a janela histórica, calcula as métricas de
 performance (via core.performance) e guarda o resultado em cache na RAM.
 
-Camada de aplicação análoga ao metrics_api.py, porém SEM rota/blueprint — a rota vem na
-fase seguinte. Este módulo NÃO é importado por app.py ainda, portanto permanece inerte
-(nenhuma thread, nenhuma chamada ao Movidesk) até ser explicitamente ligado.
+Camada de aplicação (coleta + cache) do Dashboard 2, consumida pelo blueprint
+performance_api. A coleta é LENTA (fala com a API) e roda em background; a leitura
+(ler()) é instantânea (só cache). Cache/lock próprios, isolados do cache da fila (D1).
 
 Regra de ouro: a coleta é LENTA (fala com a API) e deve rodar FORA do caminho do request
 (em background). A leitura do dashboard usa apenas `ler()`, que é instantânea (só cache).
@@ -13,6 +13,8 @@ import os
 import threading
 import time
 from datetime import datetime, timedelta, timezone
+
+import requests
 
 from core import performance
 from services.movidesk_api import get_tickets, get_window_tickets
@@ -27,6 +29,16 @@ _TTL_SEGUNDOS = int(os.getenv("PERF_CACHE_TTL_SECONDS", "300"))
 
 _cache = {}  # setor -> {"data": ..., "timestamp": ...}
 _lock = threading.Lock()
+
+# Setores com coleta em andamento (evita empilhar coletas lentas do mesmo setor).
+_inflight = set()
+_inflight_lock = threading.Lock()
+
+
+def _redact(text):
+    """Remove o token do Movidesk de qualquer texto antes de registrar em log."""
+    token = os.getenv("MOVIDESK_TOKEN")
+    return text.replace(token, "***") if token else text
 
 
 def _para_odata(dt_naive_utc):
@@ -84,3 +96,28 @@ def esta_fresco(setor):
     with _lock:
         entry = _cache.get(setor)
         return bool(entry) and (time.monotonic() - entry["timestamp"]) < _TTL_SEGUNDOS
+
+
+def _coleta_bg(setor):
+    """Executa a coleta lenta em background e libera o setor ao final."""
+    try:
+        with requests.Session() as sessao:
+            atualizar(setor, session=sessao)
+    except Exception as exc:  # a thread nao pode morrer silenciosamente; registra e segue
+        logger.warning("Falha na coleta de performance (setor=%s): %s", setor, _redact(str(exc)))
+    finally:
+        with _inflight_lock:
+            _inflight.discard(setor)
+
+
+def garantir_coleta(setor):
+    """Dispara UMA coleta em background se o cache estiver ausente/vencido e nenhuma
+    coleta do setor estiver em andamento. Retorna imediatamente (nunca bloqueia o request).
+    """
+    if esta_fresco(setor):
+        return
+    with _inflight_lock:
+        if setor in _inflight:
+            return
+        _inflight.add(setor)
+    threading.Thread(target=_coleta_bg, args=(setor,), daemon=True, name=f"perf-{setor}").start()

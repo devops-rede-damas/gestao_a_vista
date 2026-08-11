@@ -11,14 +11,14 @@ from flask import Flask, abort, jsonify, render_template, request
 from services.movidesk_api import get_tickets
 from core.sectors import sector_display
 from core.tokens import resolve_sector, ensure_token
-from metrics_api import metrics_bp
+from performance_api import performance_bp
 
 load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.register_blueprint(metrics_bp)
+app.register_blueprint(performance_bp)
 
 # Cache em memória com TTL, por setor, para reduzir chamadas ao Movidesk (várias telas/refreshes).
 _CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "30"))

@@ -104,12 +104,12 @@ def build_filter(setor, cfg=None):
     return " and ".join(partes)
 
 
-# Campos de data que marcam "atividade" de um ticket, usados na janela do painel do dia.
+# Campos de data que marcam "atividade" de um ticket, usados na janela histórica.
 _DAY_ACTIVITY_FIELDS = ("createdDate", "resolvedIn", "closedIn", "canceledIn")
 
 
 def build_day_filter(setor, desde, cfg=None):
-    """Monta o $filter OData do PAINEL DO DIA de um setor.
+    """Monta o $filter OData de uma JANELA HISTÓRICA de um setor (base do Dashboard 2).
 
     Mantém o mesmo escopo do setor (equipes/pessoas/clientes), porém SEM o corte de
     status — para enxergar também resolvidos/fechados/cancelados — e restringe à
