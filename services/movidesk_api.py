@@ -47,6 +47,41 @@ def get_day_tickets(setor, desde):
     return response.json()
 
 
+# Campos necessários às métricas de gestão/performance (Dashboard 2). Sem $expand owner:
+# o Dashboard 2 é agregado por setor, não por responsável, então dispensa o dado do dono.
+_WINDOW_SELECT = (
+    "id,baseStatus,ownerTeam,createdDate,resolvedIn,closedIn,canceledIn,"
+    "slaResponseDate,slaRealResponseDate,slaSolutionDate,resolvedInFirstCall,"
+    "slaSolutionChangedByUser,slaSolutionDateIsPaused"
+)
+
+
+def get_window_tickets(setor, desde, session=None, page_size=1000, max_pages=20):
+    """Busca, com paginação, os tickets de um setor com atividade a partir de <desde>.
+
+    Read-only, mesmo escopo de setor de get_day_tickets, porém com $select próprio do
+    Dashboard 2 e paginação via $skip (o Movidesk não fornece contagem total; paramos
+    quando uma página vem com menos itens que <page_size>). <session> opcional
+    (requests.Session) reaproveita a conexão e reduz a latência entre páginas.
+    """
+    http = session or requests
+    base = {
+        "token": os.getenv("MOVIDESK_TOKEN"),
+        "$select": _WINDOW_SELECT,
+        "$filter": build_day_filter(setor, desde),
+    }
+    coletados = []
+    for pagina in range(max_pages):
+        params = {**base, "$top": page_size, "$skip": pagina * page_size}
+        response = http.get(BASE_URL, params=params, timeout=60)
+        response.raise_for_status()
+        lote = response.json()
+        coletados.extend(lote)
+        if len(lote) < page_size:
+            break
+    return coletados
+
+
 if __name__ == "__main__":
     # Teste isolado da Etapa 1: busca os tickets e imprime um resumo.
     if not os.getenv("MOVIDESK_TOKEN"):
