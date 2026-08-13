@@ -53,7 +53,7 @@
     <script>
         // Backend injeta os tickets e o token (opaco) do painel atual aqui.
         window.tickets = {{ tickets | tojson | safe }};
-        window.token = {{ token | tojson | safe }};
+        window.setor = {{ setor | tojson | safe }};
         window.exibicao = {{ exibicao | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}" type="module"></script>

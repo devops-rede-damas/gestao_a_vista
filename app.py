@@ -9,8 +9,7 @@ from dotenv import load_dotenv
 from flask import Flask, abort, jsonify, render_template, request
 
 from services.movidesk_api import get_tickets
-from core.sectors import sector_display
-from core.tokens import resolve_sector, ensure_token
+from core.sectors import available_sectors, sector_display
 from performance_api import performance_bp
 
 load_dotenv()
@@ -19,6 +18,12 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 app.register_blueprint(performance_bp)
+
+
+@app.context_processor
+def _inject_flags():
+    """Flags de feature para os templates (Dashboard 2 é opt-in; padrão desligado)."""
+    return {"mostrar_perf": os.getenv("DASHBOARD2", "false").lower() == "true"}
 
 # Cache em memória com TTL, por setor, para reduzir chamadas ao Movidesk (várias telas/refreshes).
 _CACHE_TTL_SECONDS = int(os.getenv("CACHE_TTL_SECONDS", "30"))
@@ -91,22 +96,21 @@ def _fetch_tickets(setor="ti"):
 @app.route("/gv_movidesk")
 def gv_movidesk():
     tickets = _fetch_tickets("ti")
-    return render_template("gta.html", tickets=tickets or [], token=ensure_token("ti"), exibicao=sector_display("ti"))
+    return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"))
 
 
-@app.route("/painel/<token>")
-def painel(token):
-    setor = resolve_sector(token)
-    if setor is None:
+@app.route("/painel/<setor>")
+def painel(setor):
+    if setor not in available_sectors():
         abort(404)
     tickets = _fetch_tickets(setor)
-    return render_template("gta.html", tickets=tickets or [], token=token, exibicao=sector_display(setor))
+    return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor))
 
 
 @app.route("/api/tickets")
 def api_tickets():
-    setor = resolve_sector(request.args.get("token"))
-    if setor is None:
+    setor = request.args.get("setor")
+    if setor not in available_sectors():
         abort(404)
     tickets = _fetch_tickets(setor)
     if tickets is None:

@@ -10,7 +10,7 @@ import logging
 from flask import Blueprint, abort, jsonify, request
 
 import performance_service
-from core.tokens import resolve_sector
+from core.sectors import available_sectors
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +19,8 @@ performance_bp = Blueprint("performance", __name__)
 
 @performance_bp.route("/api/metrics2")
 def api_metrics2():
-    setor = resolve_sector(request.args.get("token"))
-    if setor is None:
+    setor = request.args.get("setor")
+    if setor not in available_sectors():
         abort(404)
     performance_service.garantir_coleta(setor)  # background; não bloqueia o request
     data = performance_service.ler(setor)
