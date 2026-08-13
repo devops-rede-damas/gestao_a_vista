@@ -17,6 +17,7 @@ from datetime import datetime, timedelta, timezone
 import requests
 
 from core import performance
+from core.expediente import ExpedienteConfigError, load_expediente, minutos_uteis_entre
 from services.movidesk_api import get_tickets, get_window_tickets
 
 logger = logging.getLogger(__name__)
@@ -63,10 +64,20 @@ def coletar(setor, ref_utc=None, session=None):
     atual = performance.filtrar_periodo(janela, inicio_atual, ref_naive)
     anterior = performance.filtrar_periodo(janela, inicio_anterior, inicio_atual)
 
+    # Calendario de horario util (expediente) -> tempo medio de 1a resposta fiel.
+    # O I/O do config fica aqui (camada de servico); core.performance permanece puro.
+    try:
+        cfg_exp = load_expediente()
+        minutos_uteis = lambda ini, fim: minutos_uteis_entre(ini, fim, cfg_exp)  # noqa: E731
+    except ExpedienteConfigError:
+        minutos_uteis = None
+
     perf_atual = performance.montar_performance(
-        abertos, atual, inicio_atual, ref_naive, _EVOLUCAO_DIAS, ref
+        abertos, atual, inicio_atual, ref_naive, _EVOLUCAO_DIAS, ref, minutos_uteis
     )
-    perf_anterior = performance.montar_performance([], anterior, inicio_anterior, inicio_atual)
+    perf_anterior = performance.montar_performance(
+        [], anterior, inicio_anterior, inicio_atual, minutos_uteis=minutos_uteis
+    )
     return {
         "gerado_em": ref.isoformat(),
         "janela_dias": _JANELA_DIAS,

@@ -1,0 +1,77 @@
+/* Dashboard 2 — Performance / Gestao a Vista.
+   Estilos ESCOPADOS sob #view-perf e body.perf-ativa; reaproveitam os tokens de
+   identidade do Dashboard 1 (definidos em gta.css). Nao afetam a fila (#main-flex). */
+:root {
+    --perf-green: #34d399;   /* bom / dentro do SLA */
+    --perf-red: #f87171;     /* estourado / piorou */
+    --perf-amber: #eab308;   /* atencao / aguardando */
+    --perf-blue: #4aa6dd;    /* entradas / neutro (azul da marca) */
+    --perf-purple: #a78bfa;  /* resolucao */
+}
+
+/* Alternancia fila <-> performance (rodizio), espelhando o padrao do painel do dia. */
+#view-perf { display: none; }
+body.perf-ativa #main-flex { display: none; }
+body.perf-ativa #view-perf { display: flex; flex-direction: column; flex: 1; min-height: 0; gap: 16px; }
+
+/* ---- Linha 1: cartoes de indicadores ---- */
+.perf-kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; flex: 0 0 auto; }
+.perf-card { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 18px 20px; display: flex; flex-direction: column; }
+.perf-card-head { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.perf-icon { width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.perf-icon svg { width: 24px; height: 24px; }
+.perf-title { font-size: .9rem; font-weight: 700; color: var(--rd-text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.perf-value { font-size: 3rem; font-weight: 800; color: var(--rd-text); line-height: 1; font-variant-numeric: tabular-nums; }
+.perf-value .unit { font-size: 1.2rem; font-weight: 600; color: var(--rd-text-dim); margin-left: 4px; }
+.perf-trend { font-size: .88rem; font-weight: 700; margin-top: 8px; }
+.perf-trend.up { color: var(--perf-green); }
+.perf-trend.down { color: var(--perf-red); }
+.perf-trend.flat { color: var(--rd-text-dim); }
+
+/* Sub-valores (baldes do SLA) */
+.perf-sub { display: flex; gap: 18px; margin-top: auto; padding-top: 14px; }
+.perf-sub-item { display: flex; flex-direction: column; line-height: 1.1; }
+.perf-sub-val { font-size: 1.3rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.perf-sub-lbl { font-size: .7rem; color: var(--rd-text-dim); text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
+.perf-sub-val.g { color: var(--perf-green); }
+.perf-sub-val.a { color: var(--perf-amber); }
+.perf-sub-val.r { color: var(--perf-red); }
+.perf-foot { font-size: .72rem; color: var(--rd-text-dim); margin-top: 8px; }
+.perf-hint { font-size: .82rem; color: var(--rd-text-dim); margin-top: auto; padding-top: 14px; }
+
+/* Icones circulares por cor */
+.ic-green { background: rgba(52,211,153,.15); color: var(--perf-green); }
+.ic-blue { background: rgba(74,166,221,.15); color: var(--perf-blue); }
+.ic-purple { background: rgba(167,139,250,.18); color: var(--perf-purple); }
+.ic-orange { background: rgba(249,115,22,.15); color: var(--rd-orange); }
+
+/* ---- Linha 2: grafico + fluxo ---- */
+.perf-bottom { display: flex; gap: 16px; flex: 1; min-height: 0; }
+.perf-panel { background: var(--rd-panel); border: 1px solid var(--rd-card-border); border-radius: var(--rd-radius); box-shadow: var(--rd-shadow); padding: 18px 22px; display: flex; flex-direction: column; min-height: 0; }
+.perf-chart { flex: 2; }
+.perf-fluxo { flex: 1; }
+.perf-panel h2 { color: var(--rd-accent); font-size: 1.5rem; margin: 0 0 6px; }
+.perf-legend { display: flex; gap: 20px; font-size: .9rem; color: var(--rd-text-dim); margin-bottom: 8px; }
+.perf-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.lg-swatch { width: 16px; height: 4px; border-radius: 2px; display: inline-block; }
+.perf-chart svg { width: 100%; flex: 1; min-height: 0; }
+
+/* Fluxo (Entraram / Resolvidos / Saldo) */
+.fluxo-grid { display: flex; flex-direction: column; justify-content: center; flex: 1; gap: 8px; }
+.fluxo-row { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--rd-border); }
+.fluxo-row:last-child { border-bottom: none; }
+.fluxo-lbl { font-size: 1.05rem; color: var(--rd-text-dim); text-transform: uppercase; letter-spacing: 1px; }
+.fluxo-val { font-size: 2.6rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.fluxo-val.pos { color: var(--perf-blue); }
+.fluxo-val.res { color: var(--perf-green); }
+.saldo-neg { color: var(--perf-green); }
+.saldo-pos { color: var(--perf-red); }
+.fluxo-trend { font-size: .85rem; font-weight: 700; margin-top: 4px; text-align: right; }
+
+/* Estado de carregamento (enquanto a 1a coleta roda em background) */
+.perf-loading { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--rd-text-dim); font-size: 1.4rem; }
+
+@media (max-width: 1100px) {
+    .perf-kpis { grid-template-columns: repeat(2, 1fr); }
+    .perf-bottom { flex-direction: column; }
+}

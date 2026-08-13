@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/gta.css') }}">
+    {% if mostrar_perf %}<link rel="stylesheet" href="{{ url_for('static', filename='css/performance.css') }}">{% endif %}
 </head>
 <body>
     <header class="topbar">
@@ -48,6 +49,7 @@
                 <div id="tickets-table-container"></div>
             </div>
         </div>
+        {% if mostrar_perf %}<div id="view-perf"></div>{% endif %}
     </div>
 
     <script>
@@ -57,5 +59,6 @@
         window.exibicao = {{ exibicao | tojson | safe }};
     </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}" type="module"></script>
+    {% if mostrar_perf %}<script src="{{ url_for('static', filename='js/performance.js') }}" type="module"></script>{% endif %}
 </body>
 </html>

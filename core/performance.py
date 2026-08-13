@@ -149,15 +149,35 @@ def taxa_resolucao(tickets, inicio, fim=None):
     return {"entraram": entraram, "concluidos": concluidos, "saldo": concluidos - entraram}
 
 
-def tempos_medios(tickets):
-    """Tempos medios de RELOGIO, em minutos: 1a resposta e resolucao."""
+def tempos_medios(tickets, minutos_uteis=None):
+    """Tempos medios em minutos: 1a resposta e resolucao.
+
+    'primeira_resposta' e 'resolucao' sao de RELOGIO corrido. Se <minutos_uteis> (uma
+    funcao (inicio, fim)->minutos) for fornecida, calcula tambem 'primeira_resposta_util'
+    em HORARIO UTIL de expediente (espelha o calculo do Movidesk); senao vem None.
+    """
     primeira = _media_minutos(
         (_dt(t.get("createdDate")), _dt(t.get("slaRealResponseDate"))) for t in tickets
     )
     resolucao = _media_minutos(
         (_dt(t.get("createdDate")), _fim_conclusao(t)) for t in tickets
     )
-    return {"primeira_resposta": primeira, "resolucao": resolucao}
+    primeira_util = None
+    if minutos_uteis is not None:
+        vals = []
+        for t in tickets:
+            ini = _dt(t.get("createdDate"))
+            fim = _dt(t.get("slaRealResponseDate"))
+            if ini and fim and fim >= ini:
+                m = minutos_uteis(ini, fim)
+                if m is not None:
+                    vals.append(m)
+        primeira_util = round(sum(vals) / len(vals), 1) if vals else None
+    return {
+        "primeira_resposta": primeira,
+        "primeira_resposta_util": primeira_util,
+        "resolucao": resolucao,
+    }
 
 
 def fcr(tickets, inicio, fim=None):
@@ -197,18 +217,21 @@ def evolucao_diaria(tickets, dias, ref_utc=None, fuso=_FUSO_BRASILIA):
     return [balde[d] for d in ordem]
 
 
-def montar_performance(abertos, janela, inicio, fim=None, dias_evolucao=14, ref_utc=None):
+def montar_performance(abertos, janela, inicio, fim=None, dias_evolucao=14, ref_utc=None,
+                       minutos_uteis=None):
     """Monta o dicionario de metricas do Dashboard 2 para UMA janela (puro, sem IO).
 
     - abertos: fila em aberto agora -> backlog (foto do momento).
     - janela:  tickets com atividade no periodo [inicio, fim) -> base das metricas.
+    - minutos_uteis: funcao (inicio, fim)->minutos de expediente (opcional; habilita o
+      tempo medio de 1a resposta em horario util).
     """
     return {
         "backlog_atual": len(abertos),
         "sla_primeira_resposta": sla_primeira_resposta(janela),
         "sla_solucao": sla_solucao(janela),
         "fluxo": taxa_resolucao(janela, inicio, fim),
-        "tempos_medios_min": tempos_medios(janela),
+        "tempos_medios_min": tempos_medios(janela, minutos_uteis),
         "fcr": fcr(janela, inicio, fim),
         "evolucao_diaria": evolucao_diaria(janela, dias_evolucao, ref_utc),
     }
@@ -235,6 +258,10 @@ def comparar_periodos(atual, anterior):
         "tempo_primeira_resposta": _delta(
             atual["tempos_medios_min"]["primeira_resposta"],
             anterior["tempos_medios_min"]["primeira_resposta"],
+        ),
+        "tempo_primeira_resposta_util": _delta(
+            atual["tempos_medios_min"].get("primeira_resposta_util"),
+            anterior["tempos_medios_min"].get("primeira_resposta_util"),
         ),
         "tempo_resolucao": _delta(
             atual["tempos_medios_min"]["resolucao"], anterior["tempos_medios_min"]["resolucao"]
