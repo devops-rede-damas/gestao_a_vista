@@ -41,6 +41,26 @@ body {
 .clock-time { font-size: 1.55rem; font-weight: 700; color: rgba(255,255,255,.92); font-variant-numeric: tabular-nums; }
 .clock-updated { font-size: .9rem; color: rgba(255,255,255,.7); }
 
+/* Botão "Sair" — só aparece para gestor logado (a TV nunca loga). Flutua no canto. */
+.logout-btn {
+    position: fixed;
+    bottom: 18px; right: 18px;
+    z-index: 30;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 9px 16px;
+    background: rgba(14, 58, 92, .92);
+    color: var(--rd-text);
+    border: 1px solid var(--rd-border);
+    border-radius: 999px;
+    font-size: .95rem; font-weight: 600;
+    text-decoration: none;
+    box-shadow: var(--rd-shadow);
+    transition: background .15s, transform .06s;
+}
+.logout-btn:hover { background: rgba(19, 90, 143, .95); }
+.logout-btn:active { transform: translateY(1px); }
+.logout-btn svg { width: 18px; height: 18px; }
+
 /* Centro do cabecalho: nome do departamento (fixo) + equipe (rodizio no modo por_equipe) */
 .topbar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; text-align: center; gap: 6px; }
 /* Setor: chip discreto (secundario ao nome do projeto, nunca maior que ele) */

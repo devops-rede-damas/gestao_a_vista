@@ -1,15 +1,17 @@
 import logging
 import os
+import secrets
 import threading
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, render_template, request
+from flask import Flask, abort, jsonify, render_template, request, session
 
 from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
+from core.webauth import auth_bp, login_obrigatorio, resolver_usuario, setor_autorizado
 from performance_api import performance_bp
 
 load_dotenv()
@@ -17,7 +19,22 @@ load_dotenv()
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Sessão do login (área de gestão). Sem SECRET_KEY o app ainda sobe para as TVs,
+# mas com chave efêmera as sessões não persistem entre reinícios — só avisamos.
+app.secret_key = os.getenv("SECRET_KEY") or secrets.token_urlsafe(32)
+if not os.getenv("SECRET_KEY"):
+    logger.warning("SECRET_KEY ausente no .env: usando chave efêmera (sessões não persistem entre reinícios).")
+app.config.update(
+    PERMANENT_SESSION_LIFETIME=timedelta(days=int(os.getenv("SESSION_DAYS", "7"))),
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE="Lax",
+    # Só liga em HTTPS (fase internet); em http:// na intranet, True impediria o cookie.
+    SESSION_COOKIE_SECURE=os.getenv("SESSION_COOKIE_SECURE", "false").lower() == "true",
+)
+
 app.register_blueprint(performance_bp)
+app.register_blueprint(auth_bp)
 
 
 @app.context_processor
@@ -94,17 +111,25 @@ def _fetch_tickets(setor="ti"):
 
 
 @app.route("/gv_movidesk")
+@login_obrigatorio
 def gv_movidesk():
+    if not setor_autorizado("ti"):
+        abort(403)
     tickets = _fetch_tickets("ti")
-    return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"))
+    logado = session["usuario"].get("papel") != "tv"
+    return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado)
 
 
 @app.route("/painel/<setor>")
+@login_obrigatorio
 def painel(setor):
     if setor not in available_sectors():
         abort(404)
+    if not setor_autorizado(setor):
+        abort(403)
     tickets = _fetch_tickets(setor)
-    return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor))
+    logado = session["usuario"].get("papel") != "tv"
+    return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado)
 
 
 @app.route("/api/tickets")
@@ -112,6 +137,10 @@ def api_tickets():
     setor = request.args.get("setor")
     if setor not in available_sectors():
         abort(404)
+    if not resolver_usuario():
+        abort(401)
+    if not setor_autorizado(setor):
+        abort(403)
     tickets = _fetch_tickets(setor)
     if tickets is None:
         return jsonify({"error": "Não foi possível consultar o Movidesk."}), 503

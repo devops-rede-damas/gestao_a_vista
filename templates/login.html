@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login — Gestão à Vista</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+</head>
+<body class="login-page">
+
+    <!-- Topbar (só aparece em telas pequenas; no desktop há o painel de marca) -->
+    <header class="login-topbar">
+        <img src="{{ url_for('static', filename='img/logo_branco.svg') }}" alt="Rede Damas" class="login-topbar-logo">
+        <span class="login-topbar-title">Gestão à Vista</span>
+    </header>
+
+    <div class="login-grid">
+
+        <!-- ═══════ Marca (desktop) ═══════ -->
+        <aside class="brand">
+            <div class="brand-inner">
+                <div class="brand-top">
+                    <img src="{{ url_for('static', filename='img/logo_branco.svg') }}" alt="Rede Damas" class="brand-logo">
+                    <div class="brand-lockup">
+                        <span class="brand-eyebrow">REDE DAMAS</span>
+                        <span class="brand-name">Gestão à Vista</span>
+                    </div>
+                </div>
+
+                <div class="brand-heading">
+                    <h1>Seus indicadores, sempre à vista.</h1>
+                    <p>Acompanhe em tempo real os chamados e a performance do seu setor.</p>
+                </div>
+
+                <ul class="brand-highlights">
+                    <li>
+                        <span class="hl-ic">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg>
+                        </span>
+                        <span class="hl-label">Chamados em tempo real</span>
+                    </li>
+                    <li>
+                        <span class="hl-ic">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                        </span>
+                        <span class="hl-label">Performance e SLA</span>
+                    </li>
+                    <li>
+                        <span class="hl-ic">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+                        </span>
+                        <span class="hl-label">Acesso de qualquer lugar</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+
+        <!-- ═══════ Formulário ═══════ -->
+        <main class="form-side">
+            <div class="login-card">
+
+                <div class="login-card-hd">
+                    <div class="login-avatar">
+                        <img src="{{ url_for('static', filename='img/logo_branco.svg') }}" alt="Rede Damas" class="login-avatar-logo">
+                    </div>
+                    <span class="card-badge">Gestão à Vista</span>
+                    <h1>Bem-vindo de volta</h1>
+                    <p>Faça login para acessar o painel do seu setor.</p>
+                </div>
+
+                {% if erro %}
+                <div class="login-msg" role="alert">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span>{{ erro }}</span>
+                </div>
+                {% endif %}
+
+                <form method="post" action="{{ url_for('auth.login') }}">
+                    <div class="field">
+                        <label for="email">E-mail</label>
+                        <div class="input-wrap">
+                            <input id="email" type="email" name="email" placeholder="seu.email@rededamas.com.br"
+                                   autocomplete="username" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="senha">Senha</label>
+                        <div class="input-wrap">
+                            <input id="senha" type="password" name="senha" placeholder="Sua senha"
+                                   autocomplete="current-password" required>
+                            <button type="button" class="input-toggle" id="toggle-senha" aria-label="Mostrar senha">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="login-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+                        <span>Entrar</span>
+                    </button>
+                </form>
+            </div>
+
+            <footer class="login-footer">
+                &copy; 2026 Rede Damas &mdash; Gestão à Vista
+            </footer>
+        </main>
+
+    </div>
+
+    <script>
+        // Alterna a visibilidade da senha no campo de login.
+        (function () {
+            var toggle = document.getElementById("toggle-senha");
+            var senha = document.getElementById("senha");
+            if (!toggle || !senha) return;
+            toggle.addEventListener("click", function () {
+                var mostrando = senha.type === "text";
+                senha.type = mostrando ? "password" : "text";
+                toggle.setAttribute("aria-label", mostrando ? "Mostrar senha" : "Ocultar senha");
+            });
+        })();
+    </script>
+</body>
+</html>

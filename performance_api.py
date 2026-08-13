@@ -11,6 +11,7 @@ from flask import Blueprint, abort, jsonify, request
 
 import performance_service
 from core.sectors import available_sectors
+from core.webauth import resolver_usuario, setor_autorizado
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,10 @@ def api_metrics2():
     setor = request.args.get("setor")
     if setor not in available_sectors():
         abort(404)
+    if not resolver_usuario():
+        abort(401)
+    if not setor_autorizado(setor):
+        abort(403)
     performance_service.garantir_coleta(setor)  # background; não bloqueia o request
     data = performance_service.ler(setor)
     if data is None:

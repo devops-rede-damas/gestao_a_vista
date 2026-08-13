@@ -4,6 +4,9 @@
 # Tokens de acesso por setor (capability URLs) — segredos, NUNCA versionar
 config/tokens.json
 
+# Usuários do painel de gestão (hashes de senha) — segredos, NUNCA versionar
+config/usuarios.json
+
 # Ambiente virtual
 venv/
 .venv/
