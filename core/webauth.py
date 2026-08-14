@@ -154,7 +154,9 @@ def login():
         _tentativas.pop(chave, None)
         session.clear()  # evita fixação de sessão: começa uma sessão limpa no login
         session["usuario"] = _dados_sessao(usuario)
-        session.permanent = True
+        # TV: sessão longa (+ cookie remember).
+        # Gestor: sessão de navegador — ao fechar o navegador precisa logar de novo (pede login+senha sempre).
+        session.permanent = usuario.get("papel") == "tv"
 
         destino = _painel_do_usuario(session["usuario"])
         if not destino:
