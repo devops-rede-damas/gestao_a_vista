@@ -1,0 +1,22 @@
+# Não empacotar ambiente virtual nem cache (a imagem instala do zero).
+venv/
+.venv/
+ven/
+env/
+__pycache__/
+*.pyc
+*.pyo
+
+# Git e documentação não precisam ir para dentro da imagem.
+.git/
+.gitignore
+*.md
+
+# SEGREDOS — nunca entram na imagem (vão como variáveis de ambiente no servidor).
+.env
+config/usuarios.json
+config/tokens.json
+
+# Chaves de SSH locais (túnel de desenvolvimento) não têm lugar na imagem.
+*.pem
+*id_rsa*
