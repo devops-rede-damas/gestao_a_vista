@@ -41,25 +41,69 @@ body {
 .clock-time { font-size: 1.55rem; font-weight: 700; color: rgba(255,255,255,.92); font-variant-numeric: tabular-nums; }
 .clock-updated { font-size: .9rem; color: rgba(255,255,255,.7); }
 
-/* Botão "Sair" — só aparece para gestor logado (a TV nunca loga). Flutua no canto. */
+/* Botão "Sair" — só aparece para gestor (a TV nunca loga). Fica no cabeçalho,
+   ao lado do relógio: ícone discreto que expande "Sair" e fica vermelho no hover. */
+.topbar-right { display: flex; align-items: center; gap: 14px; }
 .logout-btn {
-    position: fixed;
-    bottom: 18px; right: 18px;
-    z-index: 30;
-    display: inline-flex; align-items: center; gap: 8px;
-    padding: 9px 16px;
-    background: rgba(14, 58, 92, .92);
-    color: var(--rd-text);
-    border: 1px solid var(--rd-border);
+    display: inline-flex; align-items: center;
+    padding: 9px;
+    background: rgba(255, 255, 255, .08);
+    color: rgba(255, 255, 255, .82);
+    border: 1px solid rgba(255, 255, 255, .16);
     border-radius: 999px;
-    font-size: .95rem; font-weight: 600;
     text-decoration: none;
-    box-shadow: var(--rd-shadow);
-    transition: background .15s, transform .06s;
+    overflow: hidden;
+    transition: background .2s, border-color .2s, color .2s, padding .22s;
 }
-.logout-btn:hover { background: rgba(19, 90, 143, .95); }
+.logout-btn svg { width: 19px; height: 19px; flex: 0 0 auto; }
+.logout-btn .logout-label {
+    max-width: 0; opacity: 0; margin-left: 0;
+    white-space: nowrap; font-size: .9rem; font-weight: 600;
+    transition: max-width .25s ease, opacity .18s ease, margin-left .25s ease;
+}
+.logout-btn:hover {
+    background: rgba(220, 68, 68, .95); /* vermelho suave: sinaliza sair */
+    border-color: rgba(255, 255, 255, .3);
+    color: #fff;
+    padding: 9px 16px 9px 11px;
+}
+.logout-btn:hover .logout-label { max-width: 90px; opacity: 1; margin-left: 8px; }
 .logout-btn:active { transform: translateY(1px); }
-.logout-btn svg { width: 18px; height: 18px; }
+
+/* Contador regressivo até o próximo refresh (espelha o timer do piloto).
+   Fica no cabeçalho, ao lado de "Atualizado às". */
+.refresh-timer {
+    position: relative;
+    width: 40px; height: 40px;
+    flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    opacity: .92;
+}
+.refresh-timer svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    transform: rotate(-90deg); /* começa o anel no topo */
+}
+.refresh-timer-track {
+    fill: rgba(9, 32, 54, .55);
+    stroke: rgba(255, 255, 255, .12);
+    stroke-width: 4;
+}
+.refresh-timer-ring {
+    fill: none;
+    stroke: var(--rd-accent);
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-dasharray: 150.8;   /* 2·π·r  (r=24) */
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset .95s linear;
+}
+.refresh-timer-count {
+    position: relative;
+    font-size: .82rem; font-weight: 700;
+    color: var(--rd-text);
+    font-variant-numeric: tabular-nums;
+}
 
 /* Centro do cabecalho: nome do departamento (fixo) + equipe (rodizio no modo por_equipe) */
 .topbar-center { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; text-align: center; gap: 6px; }

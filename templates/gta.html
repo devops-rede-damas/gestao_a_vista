@@ -11,12 +11,6 @@
     {% if mostrar_perf %}<link rel="stylesheet" href="{{ url_for('static', filename='css/performance.css') }}">{% endif %}
 </head>
 <body>
-    {% if logado %}
-    <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Sair da conta">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-        <span>Sair</span>
-    </a>
-    {% endif %}
     <header class="topbar">
         <div class="topbar-brand">
             <img src="/static/img/logo_branco.svg" alt="Rede Damas" class="topbar-logo">
@@ -32,9 +26,24 @@
                 <span id="team-badge-pos" class="team-badge-pos"></span>
             </div>
         </div>
-        <div class="topbar-clock">
-            <span id="clock" class="clock-time">--:--:--</span>
-            <span id="clock-updated" class="clock-updated"></span>
+        <div class="topbar-right">
+            <div class="topbar-clock">
+                <span id="clock" class="clock-time">--:--:--</span>
+                <span id="clock-updated" class="clock-updated"></span>
+            </div>
+            <div id="refresh-timer" class="refresh-timer" title="Próxima atualização" aria-hidden="true">
+                <svg viewBox="0 0 56 56">
+                    <circle class="refresh-timer-track" cx="28" cy="28" r="24"></circle>
+                    <circle id="refresh-ring" class="refresh-timer-ring" cx="28" cy="28" r="24"></circle>
+                </svg>
+                <span id="refresh-count" class="refresh-timer-count">60</span>
+            </div>
+            {% if logado %}
+            <a href="{{ url_for('auth.logout') }}" class="logout-btn" title="Sair da conta" aria-label="Sair">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                <span class="logout-label">Sair</span>
+            </a>
+            {% endif %}
         </div>
     </header>
 

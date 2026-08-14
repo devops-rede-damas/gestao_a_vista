@@ -32,6 +32,7 @@ async function fetchTicketsAndUpdate() {
         if (!response.ok) throw new Error("Erro ao buscar tickets");
         window.tickets = await response.json();
         lastUpdated = new Date();
+        resetRefreshTimer();
         hideStaleWarning();
         render();
     } catch (error) {
@@ -50,6 +51,28 @@ function updateClock() {
 function updateLastUpdatedLabel() {
     const el = document.getElementById("clock-updated");
     if (el && lastUpdated) el.textContent = "Atualizado às " + lastUpdated.toLocaleTimeString("pt-BR");
+}
+
+// Contador regressivo (60 -> 0) até o próximo refresh, com anel circular (espelha o piloto).
+const REFRESH_SECONDS = 60;
+const RING_CIRC = 2 * Math.PI * 24; // r=24 no SVG
+let secondsLeft = REFRESH_SECONDS;
+
+function renderRefreshTimer() {
+    const count = document.getElementById("refresh-count");
+    const ring = document.getElementById("refresh-ring");
+    if (count) count.textContent = String(secondsLeft);
+    if (ring) ring.style.strokeDashoffset = String(RING_CIRC * (1 - secondsLeft / REFRESH_SECONDS));
+}
+
+function resetRefreshTimer() {
+    secondsLeft = REFRESH_SECONDS;
+    renderRefreshTimer();
+}
+
+function tickRefreshTimer() {
+    secondsLeft = secondsLeft > 0 ? secondsLeft - 1 : REFRESH_SECONDS;
+    renderRefreshTimer();
 }
 
 // Rodízio de equipes: troca a equipe em foco em intervalo fixo (modo por_equipe).
@@ -78,6 +101,10 @@ startTeamCarousel();
 // Relógio do cabeçalho: atualiza a cada segundo.
 updateClock();
 setInterval(updateClock, 1000);
+
+// Contador regressivo até o próximo refresh.
+renderRefreshTimer();
+setInterval(tickRefreshTimer, 1000);
 
 // Atualização automática a cada 60 segundos.
 setInterval(fetchTicketsAndUpdate, 60000);
