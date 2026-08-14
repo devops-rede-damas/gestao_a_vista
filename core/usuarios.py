@@ -16,6 +16,11 @@ class UsuarioConfigError(ValueError):
     """Erro de configuração de usuários (arquivo inválido, estrutura inesperada, etc.)."""
 
 
+def _backend():
+    """Origem dos usuários: 'mysql' (banco) ou 'json' (arquivo, padrão)."""
+    return (os.getenv("USUARIOS_BACKEND") or "json").strip().lower()
+
+
 def _load(path=_USUARIOS_PATH):
     """Carrega o usuarios.json (estrutura vazia se o arquivo ainda não existe)."""
     if not os.path.exists(path):
@@ -42,11 +47,17 @@ def _normalizar_email(email):
 
 def carregar_usuarios(path=_USUARIOS_PATH):
     """Lista todos os usuários cadastrados."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.carregar_usuarios()
     return _load(path)["usuarios"]
 
 
 def buscar_por_email(email, path=_USUARIOS_PATH):
     """Retorna o dict do usuário pelo e-mail (normalizado), ou None se não existir."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.buscar_por_email(email)
     alvo = _normalizar_email(email)
     if not alvo:
         return None
@@ -62,6 +73,9 @@ def salvar_usuario(usuario, path=_USUARIOS_PATH):
     No update, os campos informados sobrescrevem os antigos e os demais são
     preservados — permite, por exemplo, trocar só a senha_hash sem apagar setores.
     """
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.salvar_usuario(usuario)
     cfg = _load(path)
     email = _normalizar_email(usuario.get("email"))
     if not email:
