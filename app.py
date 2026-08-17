@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 
 import requests
 from dotenv import load_dotenv
-from flask import Flask, abort, jsonify, render_template, request, session
+from flask import Flask, abort, jsonify, redirect, render_template, request, session, url_for
 
 from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
@@ -35,6 +35,13 @@ app.config.update(
 
 app.register_blueprint(performance_bp)
 app.register_blueprint(auth_bp)
+
+
+@app.route("/")
+def index():
+    """Raiz do site: aponta para a tela de login (única URL canônica do login)."""
+    return redirect(url_for("auth.login"))
+
 
 
 @app.context_processor
