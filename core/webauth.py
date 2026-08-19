@@ -12,9 +12,10 @@ import time
 from functools import wraps
 
 from flask import (
-    Blueprint, current_app, redirect, render_template, request, session, url_for
+    Blueprint, abort, current_app, redirect, render_template, request, session, url_for
 )
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+from werkzeug.routing import BuildError
 
 from core.auth import setores_do_usuario, verificar_credenciais
 from core.sectors import available_sectors
@@ -115,6 +116,26 @@ def login_obrigatorio(view):
     return wrapper
 
 
+def papel_obrigatorio(papel):
+    """Exige autenticação E que o usuário tenha o `papel` informado.
+
+    Sem sessão -> redireciona para /login; autenticado mas com papel diferente -> 403.
+    Comparação sem distinção de maiúsculas/minúsculas (ex.: 'ADM'). Segue a mesma
+    forma de `login_obrigatorio`, servindo de guarda para as rotas do painel admin.
+    """
+    def decorador(view):
+        @wraps(view)
+        def wrapper(*args, **kwargs):
+            usuario = resolver_usuario()
+            if not usuario:
+                return redirect(url_for("auth.login"))
+            if (usuario.get("papel") or "").upper() != papel.upper():
+                abort(403)
+            return view(*args, **kwargs)
+        return wrapper
+    return decorador
+
+
 def setor_autorizado(setor):
     """True se o usuário autenticado tem acesso ao setor (cada um vê só o seu)."""
     usuario = session.get("usuario") or {}
@@ -128,10 +149,26 @@ def _painel_do_usuario(usuario_sessao):
     return url_for("painel", setor=setor) if setor else None
 
 
+def _destino_pos_login(usuario_sessao):
+    """Para onde mandar o usuário após o login.
+
+    ADM vai SEMPRE para o painel de gestão de usuários (independente de setor). Caso
+    o blueprint admin ainda não esteja registrado (fase de implementação incremental),
+    cai graciosamente no destino por setor — preservando o login dos ADMs atuais.
+    Os demais papéis (gestor/TV) continuam indo para o painel do seu 1º setor válido.
+    """
+    if (usuario_sessao or {}).get("papel") == "ADM":
+        try:
+            return url_for("admin.usuarios")
+        except BuildError:
+            pass  # rota admin ainda não existe: usa o comportamento por setor
+    return _painel_do_usuario(usuario_sessao)
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if session.get("usuario"):
-        destino = _painel_do_usuario(session["usuario"])
+        destino = _destino_pos_login(session["usuario"])
         if destino:
             return redirect(destino)
         session.clear()  # sessão sem setor: recomeça o login
@@ -158,7 +195,7 @@ def login():
         # Gestor: sessão de navegador — ao fechar o navegador precisa logar de novo (pede login+senha sempre).
         session.permanent = usuario.get("papel") == "tv"
 
-        destino = _painel_do_usuario(session["usuario"])
+        destino = _destino_pos_login(session["usuario"])
         if not destino:
             session.clear()
             logger.warning("Usuário sem setor configurado: %s", usuario.get("email"))
