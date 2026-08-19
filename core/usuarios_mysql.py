@@ -101,3 +101,124 @@ def salvar_usuario(usuario):
         return merged
     finally:
         con.close()
+
+
+# ── Operações do painel de administração (papel ADM) ───────────────────────────
+# Diferente do caminho de login (indexado por e-mail), o painel opera pela chave
+# primária `id` — estável mesmo quando o e-mail é editado — e expõe os campos de
+# cadastro (chapa/perfil/imagem) sem o senha_hash.
+
+_COLUNAS_ADMIN = "id, email, nome, papel, setor, ativo, chapa, perfil, imagem"
+_COLUNAS_EDITAVEIS = ("email", "nome", "papel", "setor", "chapa", "perfil", "imagem")
+
+
+def _row_para_admin(row):
+    """Linha do banco -> dict do painel (com id, setor cru, sem senha_hash)."""
+    if row is None:
+        return None
+    return {
+        "id": row.get("id"),
+        "email": row.get("email"),
+        "nome": row.get("nome"),
+        "papel": row.get("papel"),
+        "setor": row.get("setor"),
+        "ativo": bool(row.get("ativo", 1)),
+        "chapa": row.get("chapa"),
+        "perfil": row.get("perfil"),
+        "imagem": row.get("imagem"),
+    }
+
+
+def listar_para_admin():
+    """Todos os usuários (ativos e inativos) para a tela de gestão, ordenados por nome."""
+    con = get_connection()
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(f"SELECT {_COLUNAS_ADMIN} FROM {_TABELA} ORDER BY nome")
+            return [_row_para_admin(row) for row in cursor.fetchall()]
+    finally:
+        con.close()
+
+
+def buscar_por_id(uid):
+    """Retorna o usuário (formato do painel) pela chave primária, ou None."""
+    con = get_connection()
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(
+                f"SELECT {_COLUNAS_ADMIN} FROM {_TABELA} WHERE id = %s LIMIT 1", (uid,)
+            )
+            return _row_para_admin(cursor.fetchone())
+    finally:
+        con.close()
+
+
+def criar_usuario(dados):
+    """Insere um novo usuário e retorna o registro criado (formato do painel)."""
+    campos = {
+        "email": _normalizar_email(dados.get("email")),
+        "nome": dados.get("nome"),
+        "papel": dados.get("papel", "gestor"),
+        "setor": dados.get("setor"),
+        "senha_hash": dados.get("senha_hash"),
+        "ativo": 1 if dados.get("ativo", True) else 0,
+        "chapa": dados.get("chapa"),
+        "perfil": dados.get("perfil", dados.get("papel", "gestor")),
+        "imagem": dados.get("imagem"),
+    }
+    colunas = ", ".join(campos)
+    marcadores = ", ".join(["%s"] * len(campos))
+    con = get_connection()
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(
+                f"INSERT INTO {_TABELA} ({colunas}) VALUES ({marcadores})",
+                tuple(campos.values()),
+            )
+            novo_id = cursor.lastrowid
+        return buscar_por_id(novo_id)
+    finally:
+        con.close()
+
+
+def atualizar_usuario(uid, campos):
+    """Atualiza só as colunas informadas (whitelist) de um usuário por id; retorna o registro."""
+    permitidos = {c: v for c, v in campos.items() if c in _COLUNAS_EDITAVEIS}
+    if not permitidos:
+        return buscar_por_id(uid)
+    if "email" in permitidos:
+        permitidos["email"] = _normalizar_email(permitidos["email"])
+    sets = ", ".join(f"{c} = %s" for c in permitidos)
+    valores = list(permitidos.values()) + [uid]
+    con = get_connection()
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(f"UPDATE {_TABELA} SET {sets} WHERE id = %s", valores)
+        return buscar_por_id(uid)
+    finally:
+        con.close()
+
+
+def definir_senha(uid, senha_hash):
+    """Grava um novo hash de senha para o usuário (por id)."""
+    con = get_connection()
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE {_TABELA} SET senha_hash = %s WHERE id = %s", (senha_hash, uid)
+            )
+    finally:
+        con.close()
+
+
+def definir_ativo(uid, ativo):
+    """Ativa (1) ou inativa (0) o usuário por id. Inativar substitui a exclusão."""
+    con = get_connection()
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(
+                f"UPDATE {_TABELA} SET ativo = %s WHERE id = %s",
+                (1 if ativo else 0, uid),
+            )
+    finally:
+        con.close()

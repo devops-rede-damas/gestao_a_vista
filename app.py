@@ -13,6 +13,7 @@ from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
 from core.webauth import auth_bp, login_obrigatorio, resolver_usuario, setor_autorizado
 from performance_api import performance_bp
+from admin_api import admin_bp
 
 load_dotenv()
 
@@ -35,6 +36,7 @@ app.config.update(
 
 app.register_blueprint(performance_bp)
 app.register_blueprint(auth_bp)
+app.register_blueprint(admin_bp)
 
 
 @app.route("/")

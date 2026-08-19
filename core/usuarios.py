@@ -89,3 +89,62 @@ def salvar_usuario(usuario, path=_USUARIOS_PATH):
     cfg["usuarios"].append(novo)
     _save(cfg, path)
     return novo
+
+
+# ── Operações do painel de administração (papel ADM) ───────────────────────────
+# Gerenciam a tabela usuarios_gestor pela chave primária `id` (edição de e-mail,
+# ativar/inativar, trocar senha). São específicas do backend MySQL — o backend
+# JSON (arquivo, sem `id`) não as suporta e sinaliza isso de forma explícita.
+
+def _somente_mysql(nome):
+    raise UsuarioConfigError(
+        f"{nome}: o painel de administração requer USUARIOS_BACKEND=mysql."
+    )
+
+
+def listar_para_admin():
+    """Todos os usuários (ativos e inativos) para a tela de gestão."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.listar_para_admin()
+    _somente_mysql("listar_para_admin")
+
+
+def buscar_por_id(uid):
+    """Retorna o usuário (formato do painel) pela chave primária, ou None."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.buscar_por_id(uid)
+    _somente_mysql("buscar_por_id")
+
+
+def criar_usuario(dados):
+    """Insere um novo usuário e retorna o registro criado."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.criar_usuario(dados)
+    _somente_mysql("criar_usuario")
+
+
+def atualizar_usuario(uid, campos):
+    """Atualiza as colunas informadas de um usuário por id; retorna o registro."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.atualizar_usuario(uid, campos)
+    _somente_mysql("atualizar_usuario")
+
+
+def definir_senha(uid, senha_hash):
+    """Grava um novo hash de senha para o usuário (por id)."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.definir_senha(uid, senha_hash)
+    _somente_mysql("definir_senha")
+
+
+def definir_ativo(uid, ativo):
+    """Ativa/inativa o usuário por id (inativar substitui a exclusão)."""
+    if _backend() == "mysql":
+        from core import usuarios_mysql
+        return usuarios_mysql.definir_ativo(uid, ativo)
+    _somente_mysql("definir_ativo")
