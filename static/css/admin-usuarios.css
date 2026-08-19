@@ -1,0 +1,187 @@
+/* ═══════════════════════════════════════════════════════════════
+   Painel de Gestão de Usuários (papel ADM)
+   Identidade herdada do login (marca Rede Damas). Escopo em .admin-page.
+   Estilo próprio, sem framework CSS. DataTables é estilizado à parte
+   (static/libs) e ajustado pontualmente ao final deste arquivo.
+   ═══════════════════════════════════════════════════════════════ */
+.admin-page {
+  --brand:        #0c77ad;
+  --brand-dark:   #00517d;
+  --brand-darker: #003f61;
+  --ok:           #15803d;
+  --ok-soft:      #dcfce7;
+  --warn:         #b45309;
+  --danger:       #b91c1c;
+  --danger-soft:  #fee2e2;
+
+  --bd:      #e5eaf0;
+  --bd-soft: #f1f5f9;
+  --ink:     #0f172a;
+  --ink-2:   #334155;
+  --ink-3:   #64748b;
+  --ink-4:   #94a3b8;
+
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: #f8fafc;
+  color: var(--ink);
+}
+.admin-page *, .admin-page *::before, .admin-page *::after { box-sizing: border-box; }
+
+/* ── Topbar ────────────────────────────────────────────────────── */
+.admin-topbar {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 24px;
+  background: linear-gradient(165deg, #0f1b2d 0%, #10243a 55%, #143152 100%);
+  color: #fff;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, .15);
+}
+.admin-topbar-logo { height: 30px; width: auto; }
+.admin-topbar-title { font-weight: 700; font-size: 16px; letter-spacing: -.01em; }
+.admin-topbar-spacer { flex: 1; }
+.admin-topbar-user { font-size: 13px; color: #cbd5e1; }
+.admin-topbar a {
+  color: #fff; text-decoration: none; font-size: 13px; font-weight: 600;
+  padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,.25);
+  transition: background .15s;
+}
+.admin-topbar a:hover { background: rgba(255,255,255,.12); }
+
+/* ── Conteúdo ──────────────────────────────────────────────────── */
+.admin-wrap { max-width: 1200px; margin: 0 auto; padding: 28px 24px 48px; }
+
+.admin-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; margin-bottom: 20px;
+}
+.admin-head h1 { font-size: 22px; margin: 0; letter-spacing: -.02em; }
+.admin-head p { margin: 4px 0 0; color: var(--ink-3); font-size: 14px; }
+
+/* ── Botões ────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: inherit; font-size: 13px; font-weight: 600;
+  padding: 9px 15px; border-radius: 9px; border: 1px solid var(--bd);
+  background: #fff; color: var(--ink-2); cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+.btn:hover { background: var(--bd-soft); }
+.btn svg { width: 16px; height: 16px; }
+.btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
+.btn-primary:hover { background: var(--brand-dark); }
+.btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 7px; }
+.btn-ghost { background: transparent; border-color: transparent; color: var(--brand-dark); }
+.btn-ghost:hover { background: var(--bd-soft); }
+.btn-danger { color: var(--danger); border-color: var(--danger-soft); background: #fff; }
+.btn-danger:hover { background: var(--danger-soft); }
+
+/* ── Filtros ───────────────────────────────────────────────────── */
+.admin-filters {
+  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+  background: #fff; border: 1px solid var(--bd); border-radius: 12px;
+  padding: 16px; margin-bottom: 18px;
+}
+.filter-field { display: flex; flex-direction: column; gap: 5px; }
+.filter-field label { font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.filter-field input, .filter-field select, .modal-field input, .modal-field select {
+  font: inherit; font-size: 14px; padding: 8px 11px;
+  border: 1px solid var(--bd); border-radius: 8px; background: #fff; color: var(--ink);
+  min-width: 180px;
+}
+.filter-field input:focus, .filter-field select:focus,
+.modal-field input:focus, .modal-field select:focus {
+  outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(12,119,173,.12);
+}
+.admin-filters .btn { margin-left: auto; }
+
+/* ── Tabela (card) ─────────────────────────────────────────────── */
+.admin-card {
+  background: #fff; border: 1px solid var(--bd); border-radius: 12px;
+  padding: 8px 16px 16px; overflow: hidden;
+}
+
+/* Chips de status e papel */
+.chip {
+  display: inline-block; padding: 3px 9px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; line-height: 1.4;
+}
+.chip-ativo   { background: var(--ok-soft); color: var(--ok); }
+.chip-inativo { background: var(--danger-soft); color: var(--danger); }
+.chip-papel   { background: #e0f2fe; color: var(--brand-dark); }
+.chip-none    { color: var(--ink-4); font-style: italic; }
+
+.row-actions { display: inline-flex; gap: 6px; white-space: nowrap; }
+
+/* ── Modal ─────────────────────────────────────────────────────── */
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(15, 23, 42, .55);
+  display: none; align-items: center; justify-content: center; z-index: 50;
+  padding: 20px;
+}
+.modal-backdrop.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 14px; width: 100%; max-width: 460px;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, .3);
+  max-height: 90vh; overflow-y: auto;
+}
+.modal-hd {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 20px; border-bottom: 1px solid var(--bd);
+}
+.modal-hd h2 { font-size: 17px; margin: 0; }
+.modal-close {
+  background: transparent; border: none; cursor: pointer; color: var(--ink-3);
+  font-size: 22px; line-height: 1; padding: 2px 6px; border-radius: 6px;
+}
+.modal-close:hover { background: var(--bd-soft); color: var(--ink); }
+.modal-body { padding: 20px; display: flex; flex-direction: column; gap: 14px; }
+.modal-field { display: flex; flex-direction: column; gap: 6px; }
+.modal-field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.modal-field input, .modal-field select { min-width: 0; width: 100%; }
+.modal-field .hint { font-size: 12px; color: var(--ink-4); }
+.modal-ft {
+  display: flex; justify-content: flex-end; gap: 10px;
+  padding: 16px 20px; border-top: 1px solid var(--bd);
+}
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+.toast-wrap {
+  position: fixed; top: 18px; right: 18px; z-index: 60;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.toast {
+  min-width: 260px; max-width: 380px;
+  background: #fff; border: 1px solid var(--bd); border-left: 4px solid var(--brand);
+  border-radius: 10px; padding: 12px 14px; font-size: 14px; color: var(--ink-2);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .15);
+}
+.toast-ok    { border-left-color: var(--ok); }
+.toast-erro  { border-left-color: var(--danger); }
+.toast-title { font-weight: 700; color: var(--ink); display: block; margin-bottom: 2px; }
+
+/* ── Ajustes no DataTables (herdando as cores da marca) ─────────── */
+.admin-page table.dataTable { border-collapse: collapse; }
+.admin-page table.dataTable thead th {
+  font-size: 12px; text-transform: uppercase; letter-spacing: .03em;
+  color: var(--ink-3); border-bottom: 2px solid var(--bd);
+}
+.admin-page table.dataTable tbody td {
+  font-size: 14px; color: var(--ink-2); border-bottom: 1px solid var(--bd-soft);
+  vertical-align: middle;
+}
+.admin-page table.dataTable tbody tr:hover td { background: #f8fbfd; }
+.admin-page .dt-paging button.current {
+  background: var(--brand) !important; border-color: var(--brand) !important; color: #fff !important;
+}
+.admin-page .dt-search input, .admin-page .dt-length select {
+  border: 1px solid var(--bd); border-radius: 8px; padding: 6px 10px;
+}
+
+/* Linha de usuário inativo: leve esmaecimento */
+.admin-page tr.linha-inativo td:not(:last-child) { opacity: .6; }
+
+@media (max-width: 640px) {
+  .admin-head { flex-direction: column; align-items: flex-start; }
+  .filter-field input, .filter-field select { min-width: 140px; }
+}

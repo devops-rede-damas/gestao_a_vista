@@ -1,17 +1,160 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestão de Usuários — Gestão à Vista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='libs/dataTables.dataTables.min.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-usuarios.css') }}">
 </head>
-<body>
-  <!-- Passo 1.3: esqueleto da página (destino do redirect pós-login do ADM).
-       A interface completa (DataTables, filtros, formulários) chega no Passo 1.4. -->
-  <main>
-    <h1>Gestão de Usuários</h1>
-    <p>Painel administrativo (papel ADM). Interface em construção.</p>
-    <div id="app-usuarios"></div>
-  </main>
+<body class="admin-page">
+
+  <header class="admin-topbar">
+    <img src="{{ url_for('static', filename='img/logo_branco.svg') }}" alt="Rede Damas" class="admin-topbar-logo">
+    <span class="admin-topbar-title">Gestão à Vista</span>
+    <span class="admin-topbar-spacer"></span>
+    {% if session.usuario %}<span class="admin-topbar-user">{{ session.usuario.email }}</span>{% endif %}
+    <a href="{{ url_for('auth.logout') }}">Sair</a>
+  </header>
+
+  <div class="admin-wrap">
+
+    <div class="admin-head">
+      <div>
+        <h1>Gestão de Usuários</h1>
+        <p>Criar, editar, ativar/inativar e alterar a senha dos usuários do painel.</p>
+      </div>
+      <button type="button" class="btn btn-primary" id="btn-novo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Novo usuário</span>
+      </button>
+    </div>
+
+    <!-- Filtros -->
+    <div class="admin-filters">
+      <div class="filter-field">
+        <label for="f-nome">Nome</label>
+        <input type="text" id="f-nome" placeholder="Buscar por nome…" autocomplete="off">
+      </div>
+      <div class="filter-field">
+        <label for="f-chapa">Chapa</label>
+        <input type="text" id="f-chapa" placeholder="Buscar por chapa…" autocomplete="off">
+      </div>
+      <div class="filter-field">
+        <label for="f-setor">Setor</label>
+        <select id="f-setor">
+          <option value="">Todos</option>
+          {% for s in setores %}<option value="{{ s.chave }}">{{ s.nome }}</option>{% endfor %}
+        </select>
+      </div>
+      <button type="button" class="btn btn-ghost" id="btn-limpar">Limpar filtros</button>
+    </div>
+
+    <!-- Tabela -->
+    <div class="admin-card">
+      <table id="tabela-usuarios" class="display" style="width:100%">
+        <thead>
+          <tr>
+            <th>Nome</th>
+            <th>E-mail</th>
+            <th>Chapa</th>
+            <th>Setor</th>
+            <th>Papel</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ═══ Modal: criar/editar usuário ═══ -->
+  <div class="modal-backdrop" id="modal-usuario">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-usuario-titulo">
+      <div class="modal-hd">
+        <h2 id="modal-usuario-titulo">Novo usuário</h2>
+        <button type="button" class="modal-close" data-fechar>&times;</button>
+      </div>
+      <form id="form-usuario">
+        <div class="modal-body">
+          <input type="hidden" id="u-id">
+          <div class="modal-field">
+            <label for="u-nome">Nome</label>
+            <input type="text" id="u-nome" required>
+          </div>
+          <div class="modal-field">
+            <label for="u-email">E-mail</label>
+            <input type="email" id="u-email" required>
+          </div>
+          <div class="modal-field">
+            <label for="u-chapa">Chapa</label>
+            <input type="text" id="u-chapa" autocomplete="off">
+          </div>
+          <div class="modal-field">
+            <label for="u-setor">Setor</label>
+            <select id="u-setor">
+              <option value="">(sem setor)</option>
+              {% for s in setores %}<option value="{{ s.chave }}">{{ s.nome }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="modal-field">
+            <label for="u-papel">Papel</label>
+            <select id="u-papel">
+              {% for p in papeis %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
+            </select>
+          </div>
+          <div class="modal-field" id="campo-senha-nova">
+            <label for="u-senha">Senha inicial</label>
+            <input type="text" id="u-senha" autocomplete="off" placeholder="Deixe em branco para gerar automaticamente">
+            <span class="hint">Se ficar em branco, uma senha temporária será gerada e exibida.</span>
+          </div>
+        </div>
+        <div class="modal-ft">
+          <button type="button" class="btn" data-fechar>Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-usuario">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══ Modal: alterar senha ═══ -->
+  <div class="modal-backdrop" id="modal-senha">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-senha-titulo">
+      <div class="modal-hd">
+        <h2 id="modal-senha-titulo">Alterar senha</h2>
+        <button type="button" class="modal-close" data-fechar>&times;</button>
+      </div>
+      <form id="form-senha">
+        <div class="modal-body">
+          <input type="hidden" id="s-id">
+          <p style="margin:0;color:var(--ink-3);font-size:14px">Usuário: <strong id="s-nome"></strong></p>
+          <div class="modal-field">
+            <label for="s-senha">Nova senha</label>
+            <input type="text" id="s-senha" required minlength="8" autocomplete="off" placeholder="Ao menos 8 caracteres">
+          </div>
+        </div>
+        <div class="modal-ft">
+          <button type="button" class="btn" data-fechar>Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar senha</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <!-- Dados do servidor para o JS (papéis válidos etc.) -->
+  <script id="dados-admin" type="application/json">
+    {"papeis": {{ papeis | tojson }}, "setores": {{ setores | tojson }}}
+  </script>
+
+  <!-- Bibliotecas hospedadas localmente (Decisão #4: sem CDN) -->
+  <script src="{{ url_for('static', filename='libs/jquery-3.7.1.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='libs/dataTables.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/admin-usuarios.js') }}"></script>
 </body>
 </html>

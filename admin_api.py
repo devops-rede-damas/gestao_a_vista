@@ -16,7 +16,7 @@ import secrets
 from flask import Blueprint, abort, jsonify, render_template, request
 
 from core.auth import hash_senha
-from core.sectors import available_sectors
+from core.sectors import available_sectors, sector_display
 from core.usuarios import (
     atualizar_usuario,
     buscar_por_email,
@@ -63,7 +63,12 @@ def _setor_valido(setor):
 @papel_obrigatorio("ADM")
 def usuarios():
     """Tela de gestão de usuários (destino do redirect pós-login do ADM)."""
-    return render_template("admin/usuarios.html")
+    setores = [{"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()]
+    return render_template(
+        "admin/usuarios.html",
+        setores=setores,
+        papeis=sorted(_PAPEIS_VALIDOS),
+    )
 
 
 # ── API (JSON) ─────────────────────────────────────────────────────────────────
