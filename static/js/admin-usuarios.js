@@ -73,33 +73,38 @@
   // ── Renderizadores de célula ─────────────────────────────────────────────
   function renderSetor(chave) {
     if (!chave) return '<span class="chip-none">—</span>';
-    return escapeHtml(SETORES[chave] || chave);
+    // Mostra o código cru do banco; se não existir no setores.json, é um valor pendente.
+    if (!SETORES[chave]) return '<span class="chip-none">A definir</span>';
+    return escapeHtml(chave);
   }
   function renderPapel(papel) {
-    return '<span class="chip chip-papel">' + escapeHtml(papel || "") + "</span>";
+    var p = String(papel || "").toLowerCase();
+    var cls = "chip-papel-gestor";
+    if (p === "adm" || p === "admin") cls = "chip-papel-adm";
+    else if (p === "tv") cls = "chip-papel-tv";
+    return '<span class="chip ' + cls + '">' + escapeHtml(papel || "") + "</span>";
   }
   function renderStatus(ativo) {
     return ativo
-      ? '<span class="chip chip-ativo">Ativo</span>'
-      : '<span class="chip chip-inativo">Inativo</span>';
+      ? '<span class="chip chip-ativo"><span class="chip-dot"></span>Ativo</span>'
+      : '<span class="chip chip-inativo"><span class="chip-dot"></span>Inativo</span>';
   }
   function renderAcoes(row) {
-    var inativar = row.ativo
-      ? '<button class="btn btn-sm btn-danger" data-acao="inativar" data-id="' + row.id + '">Inativar</button>'
-      : '<button class="btn btn-sm" data-acao="ativar" data-id="' + row.id + '">Ativar</button>';
     return '<div class="row-actions">' +
-      '<button class="btn btn-sm btn-ghost" data-acao="editar" data-id="' + row.id + '">Editar</button>' +
-      '<button class="btn btn-sm btn-ghost" data-acao="senha" data-id="' + row.id + '">Senha</button>' +
-      inativar +
+      '<button class="btn btn-sm btn-gerenciar" data-acao="gerenciar" data-id="' + row.id + '" title="Gerenciar usuário">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>' +
+      '<span>Gerenciar</span></button>' +
       "</div>";
   }
 
   // ── DataTable ────────────────────────────────────────────────────────────
   var tabela = new DataTable("#tabela-usuarios", {
     ajax: { url: API, dataSrc: "" },
+    // Busca global omitida: a filtragem é feita pelo card de filtros (nome/chapa/setor).
+    layout: { topStart: "pageLength", topEnd: null, bottomStart: "info", bottomEnd: "paging" },
     language: {
       url: null,
-      search: "Buscar:", lengthMenu: "Mostrar _MENU_ registros", info: "_START_–_END_ de _TOTAL_",
+      lengthMenu: "Mostrar _MENU_ registros", info: "_START_–_END_ de _TOTAL_",
       infoEmpty: "Nenhum registro", infoFiltered: "(de _MAX_)", zeroRecords: "Nenhum usuário encontrado",
       paginate: { first: "«", previous: "‹", next: "›", last: "»" },
       emptyTable: "Nenhum usuário cadastrado",
@@ -110,6 +115,7 @@
       { data: "nome", render: function (d) { return escapeHtml(d); } },
       { data: "email", render: function (d) { return escapeHtml(d); } },
       { data: "chapa", render: function (d) { return d ? escapeHtml(d) : '<span class="chip-none">—</span>'; } },
+      { data: "cargo", render: function (d) { return d ? escapeHtml(d) : '<span class="chip-none">—</span>'; } },
       { data: "setor", render: renderSetor },
       { data: "papel", render: renderPapel },
       { data: "ativo", render: renderStatus },
@@ -126,6 +132,25 @@
     if (!filtroSetor) return true;
     return (rowData.setor || "") === filtroSetor;
   });
+
+  // Contador de resultados + visibilidade do "Limpar filtros" (só com filtro ativo)
+  function atualizarContador() {
+    var info = tabela.page.info();
+    var el = document.getElementById("filter-count");
+    if (el) {
+      var total = info.recordsTotal, mostrando = info.recordsDisplay;
+      el.textContent = mostrando === total
+        ? total + (total === 1 ? " usuário" : " usuários")
+        : mostrando + " de " + total + " usuários";
+    }
+    var temFiltro = !!(
+      document.getElementById("f-nome").value ||
+      document.getElementById("f-chapa").value ||
+      filtroSetor
+    );
+    document.getElementById("btn-limpar").hidden = !temFiltro;
+  }
+  tabela.on("draw", atualizarContador);
 
   // ── Filtros da UI ────────────────────────────────────────────────────────
   document.getElementById("f-nome").addEventListener("input", function () {
@@ -151,38 +176,66 @@
     var botao = e.target.closest("button[data-acao]");
     if (!botao) return;
     var id = Number(botao.getAttribute("data-id"));
-    var acao = botao.getAttribute("data-acao");
     var row = tabela.rows().data().toArray().find(function (r) { return r.id === id; });
-    if (acao === "editar") return abrirEdicao(row);
-    if (acao === "senha") return abrirSenha(row);
-    if (acao === "ativar") return alternarAtivo(id, true);
-    if (acao === "inativar") return alternarAtivo(id, false);
+    if (row) abrirEdicao(row);
   });
 
   // ── Criar / Editar ───────────────────────────────────────────────────────
+  var edicaoAtivoOriginal = true;  // guarda o status antes da edição (detecta mudança)
+
+  function atualizarLabelAtivo() {
+    var chk = document.getElementById("u-ativo");
+    document.getElementById("u-ativo-label").textContent = chk.checked ? "Ativo" : "Inativo";
+  }
+  document.getElementById("u-ativo").addEventListener("change", atualizarLabelAtivo);
+
   function abrirCriacao() {
     document.getElementById("modal-usuario-titulo").textContent = "Novo usuário";
     document.getElementById("form-usuario").reset();
     document.getElementById("u-id").value = "";
+    document.getElementById("campo-status").style.display = "none";
     document.getElementById("campo-senha-nova").style.display = "";
+    document.getElementById("u-senha-label").textContent = "Senha inicial";
+    document.getElementById("u-senha-hint").textContent = "Se ficar em branco, uma senha temporária será gerada e exibida.";
+    document.getElementById("u-senha").placeholder = "Deixe em branco para gerar automaticamente";
     abrirModal("modal-usuario");
     document.getElementById("u-nome").focus();
   }
   function abrirEdicao(row) {
-    document.getElementById("modal-usuario-titulo").textContent = "Editar usuário";
+    document.getElementById("modal-usuario-titulo").textContent = "Gerenciar usuário";
     document.getElementById("u-id").value = row.id;
     document.getElementById("u-nome").value = row.nome || "";
     document.getElementById("u-email").value = row.email || "";
     document.getElementById("u-chapa").value = row.chapa || "";
+    document.getElementById("u-cargo").value = row.cargo || "";
     document.getElementById("u-setor").value = row.setor || "";
     document.getElementById("u-papel").value = row.papel || "gestor";
-    // Na edição, a senha é alterada pelo botão "Senha" (fluxo próprio).
-    document.getElementById("campo-senha-nova").style.display = "none";
+    // Status: toggle refletindo o valor atual
+    edicaoAtivoOriginal = !!row.ativo;
+    document.getElementById("u-ativo").checked = !!row.ativo;
+    atualizarLabelAtivo();
+    document.getElementById("campo-status").style.display = "";
+    // Senha: redefinição opcional no mesmo modal
+    document.getElementById("campo-senha-nova").style.display = "";
+    document.getElementById("u-senha").value = "";
+    document.getElementById("u-senha-label").textContent = "Redefinir senha (opcional)";
+    document.getElementById("u-senha-hint").textContent = "Deixe em branco para manter a senha atual.";
+    document.getElementById("u-senha").placeholder = "Nova senha (mín. 8 caracteres)";
     abrirModal("modal-usuario");
     document.getElementById("u-nome").focus();
   }
 
   document.getElementById("btn-novo").addEventListener("click", abrirCriacao);
+
+  // Estado de carregamento do botão Salvar (spinner + texto)
+  var btnSalvar = document.getElementById("btn-salvar-usuario");
+  var btnSalvarHtml = btnSalvar.innerHTML;
+  function setSalvando(ativo) {
+    btnSalvar.disabled = ativo;
+    btnSalvar.innerHTML = ativo
+      ? '<span class="spinner"></span><span>Salvando…</span>'
+      : btnSalvarHtml;
+  }
 
   document.getElementById("form-usuario").addEventListener("submit", function (e) {
     e.preventDefault();
@@ -191,17 +244,38 @@
       nome: document.getElementById("u-nome").value.trim(),
       email: document.getElementById("u-email").value.trim(),
       chapa: document.getElementById("u-chapa").value.trim() || null,
+      cargo: document.getElementById("u-cargo").value.trim() || null,
       setor: document.getElementById("u-setor").value || null,
       papel: document.getElementById("u-papel").value,
     };
-    var botao = document.getElementById("btn-salvar-usuario");
-    botao.disabled = true;
+    setSalvando(true);
 
     var promessa;
     if (id) {
-      promessa = pedir("PUT", API + "/" + id, payload).then(function () {
-        toast("Usuário atualizado.", "ok");
-      });
+      var novoAtivo = document.getElementById("u-ativo").checked;
+      var novaSenha = document.getElementById("u-senha").value;
+      if (novaSenha && novaSenha.length < 8) {
+        toast("A senha deve ter ao menos 8 caracteres.", "erro", "Senha inválida");
+        setSalvando(false);
+        return;
+      }
+      if (edicaoAtivoOriginal && !novoAtivo &&
+          !window.confirm("Deseja inativar este usuário? Ele não poderá mais fazer login.")) {
+        setSalvando(false);
+        return;
+      }
+      promessa = pedir("PUT", API + "/" + id, payload);
+      if (novoAtivo !== edicaoAtivoOriginal) {
+        promessa = promessa.then(function () {
+          return pedir("PUT", API + "/" + id + "/ativo", { ativo: novoAtivo });
+        });
+      }
+      if (novaSenha) {
+        promessa = promessa.then(function () {
+          return pedir("PUT", API + "/" + id + "/senha", { senha: novaSenha });
+        });
+      }
+      promessa = promessa.then(function () { toast("Usuário atualizado.", "ok"); });
     } else {
       var senha = document.getElementById("u-senha").value;
       if (senha) payload.senha = senha;
@@ -220,39 +294,7 @@
     }).catch(function (err) {
       toast(err.message, "erro", "Não foi possível salvar");
     }).finally(function () {
-      botao.disabled = false;
+      setSalvando(false);
     });
   });
-
-  // ── Alterar senha ────────────────────────────────────────────────────────
-  function abrirSenha(row) {
-    document.getElementById("form-senha").reset();
-    document.getElementById("s-id").value = row.id;
-    document.getElementById("s-nome").textContent = row.nome + " (" + row.email + ")";
-    abrirModal("modal-senha");
-    document.getElementById("s-senha").focus();
-  }
-  document.getElementById("form-senha").addEventListener("submit", function (e) {
-    e.preventDefault();
-    var id = document.getElementById("s-id").value;
-    var senha = document.getElementById("s-senha").value;
-    pedir("PUT", API + "/" + id + "/senha", { senha: senha }).then(function () {
-      toast("Senha alterada.", "ok");
-      fecharTodos();
-    }).catch(function (err) {
-      toast(err.message, "erro", "Não foi possível alterar a senha");
-    });
-  });
-
-  // ── Ativar / Inativar ────────────────────────────────────────────────────
-  function alternarAtivo(id, ativo) {
-    var verbo = ativo ? "ativar" : "inativar";
-    if (!ativo && !window.confirm("Deseja realmente inativar este usuário? Ele não poderá mais fazer login.")) return;
-    pedir("PUT", API + "/" + id + "/ativo", { ativo: ativo }).then(function () {
-      toast("Usuário " + (ativo ? "ativado" : "inativado") + ".", "ok");
-      tabela.ajax.reload(null, false);
-    }).catch(function (err) {
-      toast(err.message, "erro", "Não foi possível " + verbo);
-    });
-  }
 })();

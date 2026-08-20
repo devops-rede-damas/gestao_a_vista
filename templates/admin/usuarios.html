@@ -24,8 +24,12 @@
 
     <div class="admin-head">
       <div>
-        <h1>Gestão de Usuários</h1>
-        <p>Criar, editar, ativar/inativar e alterar a senha dos usuários do painel.</p>
+        <div class="admin-titlebar">
+          <h1 class="admin-title">Painel Admin</h1>
+          <span class="admin-title-sep" aria-hidden="true">·</span>
+          <span class="admin-subtitle">Gestão de Usuários</span>
+        </div>
+        <p class="admin-desc">Criar, editar, ativar/inativar e alterar a senha dos usuários do painel.</p>
       </div>
       <button type="button" class="btn btn-primary" id="btn-novo">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -35,22 +39,36 @@
 
     <!-- Filtros -->
     <div class="admin-filters">
-      <div class="filter-field">
-        <label for="f-nome">Nome</label>
-        <input type="text" id="f-nome" placeholder="Buscar por nome…" autocomplete="off">
+      <div class="filters-row">
+        <div class="filter-field">
+          <label for="f-nome">Nome</label>
+          <div class="input-icon">
+            <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="f-nome" placeholder="Buscar por nome…" autocomplete="off">
+          </div>
+        </div>
+        <div class="filter-field">
+          <label for="f-chapa">Chapa</label>
+          <div class="input-icon">
+            <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="f-chapa" placeholder="Buscar por chapa…" autocomplete="off">
+          </div>
+        </div>
+        <div class="filter-field">
+          <label for="f-setor">Setor</label>
+          <select id="f-setor">
+            <option value="">Todos</option>
+            {% for s in setores %}<option value="{{ s.chave }}">{{ s.nome }}</option>{% endfor %}
+          </select>
+        </div>
       </div>
-      <div class="filter-field">
-        <label for="f-chapa">Chapa</label>
-        <input type="text" id="f-chapa" placeholder="Buscar por chapa…" autocomplete="off">
+      <div class="filters-foot">
+        <span class="filter-count" id="filter-count"></span>
+        <button type="button" class="btn btn-ghost btn-sm btn-limpar" id="btn-limpar" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.5 8a9 9 0 1 0 2-3"/></svg>
+          <span>Limpar filtros</span>
+        </button>
       </div>
-      <div class="filter-field">
-        <label for="f-setor">Setor</label>
-        <select id="f-setor">
-          <option value="">Todos</option>
-          {% for s in setores %}<option value="{{ s.chave }}">{{ s.nome }}</option>{% endfor %}
-        </select>
-      </div>
-      <button type="button" class="btn btn-ghost" id="btn-limpar">Limpar filtros</button>
     </div>
 
     <!-- Tabela -->
@@ -61,6 +79,7 @@
             <th>Nome</th>
             <th>E-mail</th>
             <th>Chapa</th>
+            <th>Cargo</th>
             <th>Setor</th>
             <th>Papel</th>
             <th>Status</th>
@@ -84,15 +103,31 @@
           <input type="hidden" id="u-id">
           <div class="modal-field">
             <label for="u-nome">Nome</label>
-            <input type="text" id="u-nome" required>
+            <div class="input-icon">
+              <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="u-nome" required>
+            </div>
           </div>
           <div class="modal-field">
             <label for="u-email">E-mail</label>
-            <input type="email" id="u-email" required>
+            <div class="input-icon">
+              <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+              <input type="email" id="u-email" required>
+            </div>
           </div>
           <div class="modal-field">
             <label for="u-chapa">Chapa</label>
-            <input type="text" id="u-chapa" autocomplete="off">
+            <div class="input-icon">
+              <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+              <input type="text" id="u-chapa" autocomplete="off">
+            </div>
+          </div>
+          <div class="modal-field">
+            <label for="u-cargo">Cargo</label>
+            <div class="input-icon">
+              <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+              <input type="text" id="u-cargo" autocomplete="off" placeholder="Ex.: Coordenador de Processos">
+            </div>
           </div>
           <div class="modal-field">
             <label for="u-setor">Setor</label>
@@ -107,39 +142,26 @@
               {% for p in papeis %}<option value="{{ p }}">{{ p }}</option>{% endfor %}
             </select>
           </div>
+          <div class="modal-field" id="campo-status" style="display:none">
+            <label>Status</label>
+            <label class="switch">
+              <input type="checkbox" id="u-ativo">
+              <span class="switch-track"></span>
+              <span class="switch-label" id="u-ativo-label">Ativo</span>
+            </label>
+          </div>
           <div class="modal-field" id="campo-senha-nova">
-            <label for="u-senha">Senha inicial</label>
-            <input type="text" id="u-senha" autocomplete="off" placeholder="Deixe em branco para gerar automaticamente">
-            <span class="hint">Se ficar em branco, uma senha temporária será gerada e exibida.</span>
+            <label for="u-senha" id="u-senha-label">Senha inicial</label>
+            <div class="input-icon">
+              <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="15" r="5"/><path d="m11.5 11.5 8.5-8.5"/><path d="m17 5 3 3"/><path d="m15 7 3 3"/></svg>
+              <input type="text" id="u-senha" autocomplete="off" placeholder="Deixe em branco para gerar automaticamente">
+            </div>
+            <span class="hint" id="u-senha-hint">Se ficar em branco, uma senha temporária será gerada e exibida.</span>
           </div>
         </div>
         <div class="modal-ft">
           <button type="button" class="btn" data-fechar>Cancelar</button>
           <button type="submit" class="btn btn-primary" id="btn-salvar-usuario">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- ═══ Modal: alterar senha ═══ -->
-  <div class="modal-backdrop" id="modal-senha">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-senha-titulo">
-      <div class="modal-hd">
-        <h2 id="modal-senha-titulo">Alterar senha</h2>
-        <button type="button" class="modal-close" data-fechar>&times;</button>
-      </div>
-      <form id="form-senha">
-        <div class="modal-body">
-          <input type="hidden" id="s-id">
-          <p style="margin:0;color:var(--ink-3);font-size:14px">Usuário: <strong id="s-nome"></strong></p>
-          <div class="modal-field">
-            <label for="s-senha">Nova senha</label>
-            <input type="text" id="s-senha" required minlength="8" autocomplete="off" placeholder="Ao menos 8 caracteres">
-          </div>
-        </div>
-        <div class="modal-ft">
-          <button type="button" class="btn" data-fechar>Cancelar</button>
-          <button type="submit" class="btn btn-primary">Salvar senha</button>
         </div>
       </form>
     </div>

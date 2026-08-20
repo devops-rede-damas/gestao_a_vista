@@ -8,7 +8,7 @@ USUARIOS_BACKEND=mysql; caso contrário o backend JSON continua sendo o padrão.
 from core.db import get_connection
 
 _TABELA = "usuarios_gestor"
-_COLUNAS = "email, nome, papel, setor, senha_hash, ativo, chapa, perfil, imagem"
+_COLUNAS = "email, nome, papel, setor, senha_hash, ativo, chapa, cargo, imagem"
 
 
 def _normalizar_email(email):
@@ -30,7 +30,7 @@ def _row_para_usuario(row):
         "ativo": bool(row.get("ativo", 1)),
     }
     # Campos extras (uso futuro no painel admin): só incluídos quando preenchidos.
-    for extra in ("chapa", "perfil", "imagem"):
+    for extra in ("chapa", "cargo", "imagem"):
         if row.get(extra) is not None:
             usuario[extra] = row.get(extra)
     return usuario
@@ -84,7 +84,7 @@ def salvar_usuario(usuario):
         "senha_hash": merged.get("senha_hash"),
         "ativo": 1 if merged.get("ativo", True) else 0,
         "chapa": merged.get("chapa"),
-        "perfil": merged.get("perfil", "gestor"),
+        "cargo": merged.get("cargo", "gestor"),
         "imagem": merged.get("imagem"),
     }
     colunas = ", ".join(campos)
@@ -106,10 +106,10 @@ def salvar_usuario(usuario):
 # ── Operações do painel de administração (papel ADM) ───────────────────────────
 # Diferente do caminho de login (indexado por e-mail), o painel opera pela chave
 # primária `id` — estável mesmo quando o e-mail é editado — e expõe os campos de
-# cadastro (chapa/perfil/imagem) sem o senha_hash.
+# cadastro (chapa/cargo/imagem) sem o senha_hash.
 
-_COLUNAS_ADMIN = "id, email, nome, papel, setor, ativo, chapa, perfil, imagem"
-_COLUNAS_EDITAVEIS = ("email", "nome", "papel", "setor", "chapa", "perfil", "imagem")
+_COLUNAS_ADMIN = "id, email, nome, papel, setor, ativo, chapa, cargo, imagem"
+_COLUNAS_EDITAVEIS = ("email", "nome", "papel", "setor", "chapa", "cargo", "imagem")
 
 
 def _row_para_admin(row):
@@ -124,7 +124,7 @@ def _row_para_admin(row):
         "setor": row.get("setor"),
         "ativo": bool(row.get("ativo", 1)),
         "chapa": row.get("chapa"),
-        "perfil": row.get("perfil"),
+        "cargo": row.get("cargo"),
         "imagem": row.get("imagem"),
     }
 
@@ -163,7 +163,7 @@ def criar_usuario(dados):
         "senha_hash": dados.get("senha_hash"),
         "ativo": 1 if dados.get("ativo", True) else 0,
         "chapa": dados.get("chapa"),
-        "perfil": dados.get("perfil", dados.get("papel", "gestor")),
+        "cargo": dados.get("cargo", dados.get("papel", "gestor")),
         "imagem": dados.get("imagem"),
     }
     colunas = ", ".join(campos)

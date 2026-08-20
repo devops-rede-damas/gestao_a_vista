@@ -52,11 +52,14 @@
 .admin-wrap { max-width: 1200px; margin: 0 auto; padding: 28px 24px 48px; }
 
 .admin-head {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; margin-bottom: 20px;
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 22px;
 }
-.admin-head h1 { font-size: 22px; margin: 0; letter-spacing: -.02em; }
-.admin-head p { margin: 4px 0 0; color: var(--ink-3); font-size: 14px; }
+.admin-titlebar { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.admin-title { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -.03em; color: var(--ink); }
+.admin-title-sep { color: var(--ink-5); font-size: 18px; line-height: 1; }
+.admin-subtitle { font-size: 16px; font-weight: 500; color: var(--ink-3); }
+.admin-desc { margin: 6px 0 0; color: var(--ink-4); font-size: 13px; }
 
 /* ── Botões ────────────────────────────────────────────────────── */
 .btn {
@@ -70,6 +73,13 @@
 .btn svg { width: 16px; height: 16px; }
 .btn-primary { background: var(--brand); border-color: var(--brand); color: #fff; }
 .btn-primary:hover { background: var(--brand-dark); }
+.btn:disabled { opacity: .7; cursor: default; }
+.spinner {
+  display: inline-block; width: 14px; height: 14px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 .btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 7px; }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--brand-dark); }
 .btn-ghost:hover { background: var(--bd-soft); }
@@ -78,14 +88,23 @@
 
 /* ── Filtros ───────────────────────────────────────────────────── */
 .admin-filters {
-  display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end;
+  display: flex; flex-direction: column; gap: 14px;
   background: #fff; border: 1px solid var(--bd); border-radius: 12px;
-  padding: 16px; margin-bottom: 18px;
+  padding: 16px 18px; margin-bottom: 18px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 1px 3px rgba(15, 23, 42, .03);
 }
-.filter-field { display: flex; flex-direction: column; gap: 5px; }
-.filter-field label { font-size: 12px; font-weight: 600; color: var(--ink-3); }
+.filters-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.filters-foot {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding-top: 12px; border-top: 1px solid var(--bd-soft); min-height: 20px;
+}
+.filter-field { display: flex; flex-direction: column; gap: 6px; }
+.filter-field label {
+  font-size: 11px; font-weight: 600; color: var(--ink-4);
+  text-transform: uppercase; letter-spacing: .05em;
+}
 .filter-field input, .filter-field select, .modal-field input, .modal-field select {
-  font: inherit; font-size: 14px; padding: 8px 11px;
+  font: inherit; font-size: 14px; padding: 9px 12px;
   border: 1px solid var(--bd); border-radius: 8px; background: #fff; color: var(--ink);
   min-width: 180px;
 }
@@ -93,25 +112,61 @@
 .modal-field input:focus, .modal-field select:focus {
   outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(12,119,173,.12);
 }
-.admin-filters .btn { margin-left: auto; }
+/* Campo de busca com lupa embutida */
+.input-icon { position: relative; display: flex; }
+.input-icon .input-icon-svg {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--ink-4); pointer-events: none;
+}
+.input-icon input { padding-left: 34px; width: 100%; }
+.input-icon:focus-within .input-icon-svg { color: var(--brand); }
+.filter-count { font-size: 12px; font-weight: 600; color: var(--ink-3); white-space: nowrap; }
 
 /* ── Tabela (card) ─────────────────────────────────────────────── */
 .admin-card {
   background: #fff; border: 1px solid var(--bd); border-radius: 12px;
   padding: 8px 16px 16px; overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, .04), 0 1px 3px rgba(15, 23, 42, .03);
 }
 
 /* Chips de status e papel */
 .chip {
-  display: inline-block; padding: 3px 9px; border-radius: 999px;
-  font-size: 12px; font-weight: 600; line-height: 1.4;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; line-height: 1.4;
+  text-transform: uppercase; letter-spacing: .04em;
 }
+.chip-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
 .chip-ativo   { background: var(--ok-soft); color: var(--ok); }
 .chip-inativo { background: var(--danger-soft); color: var(--danger); }
-.chip-papel   { background: #e0f2fe; color: var(--brand-dark); }
+.chip-papel-gestor { background: #f1f5f9; color: #475569; }
+.chip-papel-adm    { background: #ede9fe; color: #6d28d9; }
+.chip-papel-tv     { background: #e0f2fe; color: #0369a1; }
 .chip-none    { color: var(--ink-4); font-style: italic; }
 
 .row-actions { display: inline-flex; gap: 6px; white-space: nowrap; }
+
+/* Botão único de ação por linha */
+.btn-gerenciar { color: var(--brand-dark); border-color: var(--bd); background: #fff; }
+.btn-gerenciar:hover { background: var(--bd-soft); border-color: var(--brand); color: var(--brand-dark); }
+.btn-gerenciar svg { width: 14px; height: 14px; }
+
+/* Toggle (Ativo/Inativo) no modal */
+.switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.switch-track {
+  position: relative; width: 42px; height: 24px; border-radius: 999px;
+  background: #cbd5e1; transition: background .18s; flex-shrink: 0;
+}
+.switch-track::after {
+  content: ""; position: absolute; top: 3px; left: 3px;
+  width: 18px; height: 18px; border-radius: 50%; background: #fff;
+  transition: transform .18s; box-shadow: 0 1px 2px rgba(15, 23, 42, .2);
+}
+.switch input:checked + .switch-track { background: var(--ok); }
+.switch input:checked + .switch-track::after { transform: translateX(18px); }
+.switch input:focus-visible + .switch-track { box-shadow: 0 0 0 3px rgba(12, 119, 173, .2); }
+.switch-label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 
 /* ── Modal ─────────────────────────────────────────────────────── */
 .modal-backdrop {
@@ -120,14 +175,29 @@
   padding: 20px;
 }
 .modal-backdrop.open { display: flex; }
+.modal-backdrop.open { animation: modalBackdropIn .16s ease; }
+.modal-backdrop.open .modal { animation: modalIn .2s cubic-bezier(.16, 1, .3, 1); }
+@keyframes modalBackdropIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop.open, .modal-backdrop.open .modal { animation: none; }
+}
 .modal {
   background: #fff; border-radius: 14px; width: 100%; max-width: 460px;
   box-shadow: 0 20px 60px rgba(15, 23, 42, .3);
   max-height: 90vh; overflow-y: auto;
 }
 .modal-hd {
+  position: relative;
   display: flex; align-items: center; justify-content: space-between;
   padding: 18px 20px; border-bottom: 1px solid var(--bd);
+}
+.modal-hd::after {
+  content: ""; position: absolute; left: 20px; bottom: -1px;
+  width: 44px; height: 3px; border-radius: 3px; background: var(--brand);
 }
 .modal-hd h2 { font-size: 17px; margin: 0; }
 .modal-close {
@@ -163,14 +233,17 @@
 /* ── Ajustes no DataTables (herdando as cores da marca) ─────────── */
 .admin-page table.dataTable { border-collapse: collapse; }
 .admin-page table.dataTable thead th {
-  font-size: 12px; text-transform: uppercase; letter-spacing: .03em;
-  color: var(--ink-3); border-bottom: 2px solid var(--bd);
+  font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
+  color: #475569; background: linear-gradient(180deg, #e9eef5 0%, #dfe6ef 100%);
+  padding: 13px 16px; border-bottom: 1px solid var(--bd); white-space: nowrap;
 }
+.admin-page table.dataTable thead th:first-child { border-top-left-radius: 10px; }
+.admin-page table.dataTable thead th:last-child  { border-top-right-radius: 10px; }
 .admin-page table.dataTable tbody td {
-  font-size: 14px; color: var(--ink-2); border-bottom: 1px solid var(--bd-soft);
-  vertical-align: middle;
+  font-size: 14px; color: var(--ink-2); padding: 12px 16px;
+  border-bottom: 1px solid var(--bd-soft); vertical-align: middle;
 }
-.admin-page table.dataTable tbody tr:hover td { background: #f8fbfd; }
+.admin-page table.dataTable tbody tr:hover td { background: #f6f9fc; }
 .admin-page .dt-paging button.current {
   background: var(--brand) !important; border-color: var(--brand) !important; color: #fff !important;
 }

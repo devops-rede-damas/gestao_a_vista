@@ -134,7 +134,7 @@ def api_criar():
         "setor": setor,
         "senha_hash": hash_senha(senha),
         "chapa": (dados.get("chapa") or None),
-        "perfil": (dados.get("perfil") or papel),
+        "cargo": (dados.get("cargo") or None),
         "ativo": 1,
     })
     logger.info("ADM criou usuário %s (id=%s)", email, novo.get("id"))
@@ -178,8 +178,8 @@ def api_atualizar(uid):
         campos["setor"] = setor
     if "chapa" in dados:
         campos["chapa"] = (dados.get("chapa") or None)
-    if "perfil" in dados:
-        campos["perfil"] = (dados.get("perfil") or None)
+    if "cargo" in dados:
+        campos["cargo"] = (dados.get("cargo") or None)
 
     if not campos:
         return jsonify({"erro": "Nada para atualizar."}), 400
