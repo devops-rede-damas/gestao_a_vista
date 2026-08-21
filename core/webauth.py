@@ -12,13 +12,13 @@ import time
 from functools import wraps
 
 from flask import (
-    Blueprint, abort, current_app, redirect, render_template, request, session, url_for
+    Blueprint, abort, current_app, flash, redirect, render_template, request, session, url_for
 )
 from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
 from werkzeug.routing import BuildError
 
 from core.auth import setores_do_usuario, verificar_credenciais
-from core.sectors import available_sectors
+from core.sectors import available_sectors, sector_display
 from core.usuarios import buscar_por_email
 
 logger = logging.getLogger(__name__)
@@ -163,6 +163,26 @@ def _destino_pos_login(usuario_sessao):
         except BuildError:
             pass  # rota admin ainda não existe: usa o comportamento por setor
     return _painel_do_usuario(usuario_sessao)
+
+
+def redirecionar_sem_acesso(setor_pedido):
+    """403 amigável (só para rotas de PÁGINA): avisa e leva o usuário para o painel dele.
+
+    Troca a tela crua "Forbidden" por um redirect para onde o usuário PODE ir. O
+    destino é sempre autorizado, então não há loop. O aviso é de uso único (flash)
+    e o template do painel só o exibe para logados — a TV nunca o renderiza. As
+    rotas de API NÃO usam isto: mantêm abort(403/401) por serem consumidas via fetch.
+    """
+    usuario = session.get("usuario") or {}
+    destino = _destino_pos_login(usuario)
+    if not destino:
+        session.clear()  # sem setor válido: recomeça o login (evita redirect em círculo)
+        return redirect(url_for("auth.login"))
+    # ADM vai para a área de gestão (que não exibe toast); não enfileira aviso órfão.
+    if usuario.get("papel") != "ADM":
+        nome = sector_display(setor_pedido).get("nome") or setor_pedido
+        flash(f"Você não tem acesso ao setor {nome}. Exibindo o seu painel.", "aviso")
+    return redirect(destino)
 
 
 @auth_bp.route("/login", methods=["GET", "POST"])

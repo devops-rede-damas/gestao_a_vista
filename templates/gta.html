@@ -49,6 +49,18 @@
 
     <div id="stale-banner" class="stale-banner" role="status" aria-live="polite"></div>
 
+    {% if logado %}
+    {% with mensagens = get_flashed_messages(with_categories=true) %}
+    {% if mensagens %}
+    <div id="toast-container" class="toast-container">
+        {% for categoria, texto in mensagens %}
+        <div class="toast toast-{{ categoria }}" role="status" aria-live="polite">{{ texto }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    {% endif %}
+
     <div id="dashboard-container">
         <div id="main-flex">
             <div id="left-panel">
@@ -72,6 +84,15 @@
         window.tickets = {{ tickets | tojson | safe }};
         window.setor = {{ setor | tojson | safe }};
         window.exibicao = {{ exibicao | tojson | safe }};
+    </script>
+    <script>
+        // Toast de aviso (redirect sem acesso): some sozinho apos alguns segundos.
+        (function () {
+            var cont = document.getElementById("toast-container");
+            if (!cont) return;
+            setTimeout(function () { cont.classList.add("toast-hide"); }, 4000);
+            setTimeout(function () { cont.remove(); }, 4600);
+        })();
     </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}" type="module"></script>
     {% if mostrar_perf %}<script src="{{ url_for('static', filename='js/performance.js') }}" type="module"></script>{% endif %}

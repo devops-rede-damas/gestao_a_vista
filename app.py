@@ -11,7 +11,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, ses
 
 from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
-from core.webauth import auth_bp, login_obrigatorio, resolver_usuario, setor_autorizado
+from core.webauth import auth_bp, login_obrigatorio, redirecionar_sem_acesso, resolver_usuario, setor_autorizado
 from performance_api import performance_bp
 from admin_api import admin_bp
 
@@ -123,7 +123,7 @@ def _fetch_tickets(setor="ti"):
 @login_obrigatorio
 def gv_movidesk():
     if not setor_autorizado("ti"):
-        abort(403)
+        return redirecionar_sem_acesso("ti")
     tickets = _fetch_tickets("ti")
     logado = session["usuario"].get("papel") != "tv"
     return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado)
@@ -135,7 +135,7 @@ def painel(setor):
     if setor not in available_sectors():
         abort(404)
     if not setor_autorizado(setor):
-        abort(403)
+        return redirecionar_sem_acesso(setor)
     tickets = _fetch_tickets(setor)
     logado = session["usuario"].get("papel") != "tv"
     return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado)
