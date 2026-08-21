@@ -18,6 +18,7 @@ let ticketsInterval = null;
 const TICKETS_PAGE_INTERVAL = 10000;
 const TICKETS_ROW_PX = 42;      // altura fixa de uma linha (casada com o CSS)
 const TICKETS_CHROME_PX = 130;  // titulo + cabecalho + paginador + paddings
+const MOBILE_PER_PAGE = 10;     // celular: até 10 rola natural; acima disso, paginação manual
 
 // Quantas linhas cabem por página, a partir da altura real disponível do card.
 function ticketsPerPage(container) {
@@ -26,8 +27,9 @@ function ticketsPerPage(container) {
     return Math.max(1, Math.floor((h - TICKETS_CHROME_PX) / TICKETS_ROW_PX));
 }
 
-function ticketRowHtml(t) {
-    const owner = (t.owner && t.owner.businessName) || "-";
+function ticketRowHtml(t, mobile) {
+    const ownerFull = (t.owner && t.owner.businessName) || "-";
+    const owner = mobile ? ownerFull.split(" ")[0] : ownerFull; // celular: só o primeiro nome
     const respondido = !!t.slaRealResponseDate;
     const slaTexto = respondido ? "Realizada" : (t.slaResponseDateFmt || "-");
     const status = t.slaStatus || "";
@@ -51,18 +53,29 @@ export function renderTicketsTable() {
         !t.slaRealResponseDate
     ).sort((a, b) => (SLA_PRIORITY[a.slaStatus] ?? 9) - (SLA_PRIORITY[b.slaStatus] ?? 9));
 
-    const perPage = ehMobile() ? Math.max(tickets.length, 1) : ticketsPerPage(container);
-    const totalPages = ehMobile() ? 1 : Math.max(1, Math.ceil(tickets.length / perPage));
+    const mobile = ehMobile();
+    const perPage = mobile ? MOBILE_PER_PAGE : ticketsPerPage(container);
+    const totalPages = Math.max(1, Math.ceil(tickets.length / perPage));
     if (currentTicketsPage >= totalPages) currentTicketsPage = 0;
-    const pageData = ehMobile() ? tickets : tickets.slice(currentTicketsPage * perPage, currentTicketsPage * perPage + perPage);
+    // Celular: até 10 mostra todos (rolagem natural); acima, a página atual.
+    const pageData = (mobile && tickets.length <= perPage)
+        ? tickets
+        : tickets.slice(currentTicketsPage * perPage, currentTicketsPage * perPage + perPage);
 
     const rows = tickets.length === 0
         ? `<div class="tk-empty">Nenhum ticket encontrado.</div>`
-        : pageData.map(ticketRowHtml).join("");
+        : pageData.map(t => ticketRowHtml(t, mobile)).join("");
 
-    const pager = (!ehMobile() && totalPages > 1)
-        ? `<div class="carousel-page">Página ${currentTicketsPage + 1} de ${totalPages}</div>`
-        : "";
+    let pager = "";
+    if (totalPages > 1) {
+        pager = mobile
+            ? `<div class="tickets-pager">
+                   <button type="button" class="tk-page-btn" data-dir="prev" aria-label="Página anterior">&#8249;</button>
+                   <span class="tickets-pager-info">Página ${currentTicketsPage + 1} de ${totalPages}</span>
+                   <button type="button" class="tk-page-btn" data-dir="next" aria-label="Próxima página">&#8250;</button>
+               </div>`
+            : `<div class="carousel-page">Página ${currentTicketsPage + 1} de ${totalPages}</div>`;
+    }
 
     container.innerHTML = `
         <h2>Tickets Novos / Sem 1ª Resposta</h2>
@@ -77,9 +90,17 @@ export function renderTicketsTable() {
         </div>
         ${pager}`;
 
-    // Mobile: mostra todos os tickets com rolagem (sem rodízio). TV/desktop: mantém o carrossel.
-    if (ehMobile()) {
+    // Celular: paginação MANUAL (setas), sem rodízio automático. TV/desktop: carrossel.
+    if (mobile) {
         if (ticketsInterval) clearTimeout(ticketsInterval);
+        container.querySelectorAll(".tk-page-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                currentTicketsPage = btn.dataset.dir === "next"
+                    ? (currentTicketsPage + 1) % totalPages
+                    : (currentTicketsPage - 1 + totalPages) % totalPages;
+                renderTicketsTable();
+            });
+        });
     } else {
         startTicketsCarousel(totalPages);
     }

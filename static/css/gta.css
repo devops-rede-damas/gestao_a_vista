@@ -224,14 +224,33 @@ td.empty { text-align: center; color: var(--rd-text-dim); }
     .topbar-logo { width: 40px; height: 40px; }
 }
 
-/* Etapa 3 — no celular, cada ticket vira um cartão empilhado com rótulos (data-label). */
+/* Refino mobile — cartão compacto de 2 linhas: linha 1 = nº (esq) + status (dir);
+   linha 2 = "Resp.: primeiro nome". SLA oculto no celular. */
 @media (max-width: 768px) {
     .tickets-list .tk-head { display: none; }
-    .tk-row { flex-direction: column; align-items: stretch; height: auto; gap: 3px; padding: 12px 14px; }
-    .tk-row > span { flex: none; white-space: normal; overflow: visible; text-overflow: clip; }
-    .tk-row > span::before { content: attr(data-label) ": "; color: var(--rd-text-dim); font-size: .72rem; text-transform: uppercase; letter-spacing: .5px; margin-right: 4px; }
-    .tk-num { font-size: 1.05rem; font-weight: 700; margin-bottom: 2px; }
-    .tk-num::before { display: none; }       /* o número é o título do cartão */
+    .tk-sla { display: none; }               /* SLA 1ª Resposta não aparece no celular */
+    .tk-row {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        grid-template-areas: "num status" "owner owner";
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 2px;
+        height: auto;
+        padding: 10px 14px;
+    }
+    .tk-row > span { white-space: normal; overflow: visible; }
+    .tk-num { grid-area: num; font-size: 1.05rem; font-weight: 700; }
+    .tk-num::before { display: none; }        /* o número é o título do cartão */
+    .tk-status { grid-area: status; justify-self: end; font-weight: 700; }
+    .tk-status::before { display: none; }     /* a cor já indica o status */
+    .tk-owner { grid-area: owner; color: var(--rd-text-dim); }
+    .tk-owner::before { content: "Resp.: "; color: var(--rd-text-dim); }
+    /* Paginação manual dos tickets (aparece só quando há mais de 10). */
+    .tickets-pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; }
+    .tk-page-btn { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; font-size: 1.4rem; line-height: 1; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; cursor: pointer; }
+    .tk-page-btn:active { transform: translateY(1px); }
+    .tickets-pager-info { color: var(--rd-text-dim); font-weight: 600; }
 }
 
 /* Etapa 4 — ranking no celular: lista completa legível (a contagem não pode ser cortada). */
