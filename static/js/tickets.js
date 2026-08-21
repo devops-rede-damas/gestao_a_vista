@@ -1,5 +1,5 @@
 // Widget "Tickets Novos / Sem 1ª Resposta": lista paginada por criticidade de SLA.
-import { escapeHtml } from "./util.js";
+import { escapeHtml, ehMobile } from "./util.js";
 import { currentTickets } from "./view.js";
 
 // Classes de cor por status de SLA (definidas em static/css/gta.css).
@@ -34,10 +34,10 @@ function ticketRowHtml(t) {
     const statusClass = SLA_STATUS_CLASS[status] || "";
     return `
                 <div class="tk-row">
-                    <span class="tk-num">#${escapeHtml(t.id)}</span>
-                    <span class="tk-owner">${escapeHtml(owner)}</span>
-                    <span class="tk-sla">${escapeHtml(slaTexto)}</span>
-                    <span class="tk-status ${statusClass}">${escapeHtml(status)}</span>
+                    <span class="tk-num" data-label="Nº">#${escapeHtml(t.id)}</span>
+                    <span class="tk-owner" data-label="Responsável">${escapeHtml(owner)}</span>
+                    <span class="tk-sla" data-label="SLA 1ª Resposta">${escapeHtml(slaTexto)}</span>
+                    <span class="tk-status ${statusClass}" data-label="Status">${escapeHtml(status)}</span>
                 </div>`;
 }
 
@@ -51,16 +51,16 @@ export function renderTicketsTable() {
         !t.slaRealResponseDate
     ).sort((a, b) => (SLA_PRIORITY[a.slaStatus] ?? 9) - (SLA_PRIORITY[b.slaStatus] ?? 9));
 
-    const perPage = ticketsPerPage(container);
-    const totalPages = Math.max(1, Math.ceil(tickets.length / perPage));
+    const perPage = ehMobile() ? Math.max(tickets.length, 1) : ticketsPerPage(container);
+    const totalPages = ehMobile() ? 1 : Math.max(1, Math.ceil(tickets.length / perPage));
     if (currentTicketsPage >= totalPages) currentTicketsPage = 0;
-    const pageData = tickets.slice(currentTicketsPage * perPage, currentTicketsPage * perPage + perPage);
+    const pageData = ehMobile() ? tickets : tickets.slice(currentTicketsPage * perPage, currentTicketsPage * perPage + perPage);
 
     const rows = tickets.length === 0
         ? `<div class="tk-empty">Nenhum ticket encontrado.</div>`
         : pageData.map(ticketRowHtml).join("");
 
-    const pager = totalPages > 1
+    const pager = (!ehMobile() && totalPages > 1)
         ? `<div class="carousel-page">Página ${currentTicketsPage + 1} de ${totalPages}</div>`
         : "";
 
@@ -77,7 +77,12 @@ export function renderTicketsTable() {
         </div>
         ${pager}`;
 
-    startTicketsCarousel(totalPages);
+    // Mobile: mostra todos os tickets com rolagem (sem rodízio). TV/desktop: mantém o carrossel.
+    if (ehMobile()) {
+        if (ticketsInterval) clearTimeout(ticketsInterval);
+    } else {
+        startTicketsCarousel(totalPages);
+    }
 }
 
 // Rodízio das páginas da tabela de tickets (só quando há mais de uma página).

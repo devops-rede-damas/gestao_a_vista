@@ -21,9 +21,13 @@
         </div>
         <div class="topbar-center">
             {% if exibicao and exibicao.nome %}<span class="panel-dept">{{ exibicao.nome }}</span>{% endif %}
-            <div id="team-badge" class="team-badge">
-                <span id="team-badge-name" class="team-badge-name"></span>
-                <span id="team-badge-pos" class="team-badge-pos"></span>
+            <div class="team-nav">
+                <button type="button" id="team-prev" class="team-nav-btn" aria-label="Equipe anterior">&#8249;</button>
+                <div id="team-badge" class="team-badge">
+                    <span id="team-badge-name" class="team-badge-name"></span>
+                    <span id="team-badge-pos" class="team-badge-pos"></span>
+                </div>
+                <button type="button" id="team-next" class="team-nav-btn" aria-label="Próxima equipe">&#8250;</button>
             </div>
         </div>
         <div class="topbar-right">

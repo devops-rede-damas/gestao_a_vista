@@ -13,6 +13,11 @@ export function nextTeam() {
     currentTeamIndex = (currentTeamIndex + 1) % teamsList.length;
 }
 
+// Volta para a equipe anterior (usado pelas setas manuais no mobile).
+export function prevTeam() {
+    currentTeamIndex = (currentTeamIndex - 1 + teamsList.length) % teamsList.length;
+}
+
 // Tickets da visão atual: a equipe em foco (por_equipe) ou a lista inteira (agregado).
 export function currentTickets() {
     const all = window.tickets || [];
@@ -24,6 +29,8 @@ export function currentTickets() {
 // Mostra qual equipe está no ar (só no modo por_equipe).
 export function updateTeamBadge() {
     const badge = document.getElementById("team-badge");
+    // Setas manuais só existem no modo por_equipe (o CSS as mostra apenas no mobile).
+    document.querySelectorAll(".team-nav-btn").forEach(b => b.classList.toggle("visible", porEquipe));
     if (!badge) return;
     if (!porEquipe) {
         badge.classList.remove("visible");

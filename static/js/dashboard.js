@@ -3,7 +3,8 @@
 import { updateKPIs } from "./kpis.js";
 import { renderTicketsTable } from "./tickets.js";
 import { renderOwnerRank } from "./ranking.js";
-import { porEquipe, nextTeam, updateTeamBadge } from "./view.js";
+import { porEquipe, nextTeam, prevTeam, updateTeamBadge } from "./view.js";
+import { ehMobile } from "./util.js";
 
 const TEAM_INTERVAL = 15000;
 let teamInterval = null;
@@ -77,8 +78,8 @@ function tickRefreshTimer() {
 
 // Rodízio de equipes: troca a equipe em foco em intervalo fixo (modo por_equipe).
 function startTeamCarousel() {
-    if (!porEquipe) return;
-    if (teamInterval) clearInterval(teamInterval);
+    if (teamInterval) clearInterval(teamInterval); // sempre limpa (ex.: ao virar mobile)
+    if (!porEquipe || ehMobile()) return; // mobile: troca manual pelas setas
     teamInterval = setInterval(() => {
         nextTeam();
         render();
@@ -97,6 +98,17 @@ function render() {
 lastUpdated = new Date();
 render();
 startTeamCarousel();
+
+// Setas de troca manual de equipe (aparecem só no mobile, modo por_equipe).
+document.getElementById("team-prev")?.addEventListener("click", () => { prevTeam(); render(); });
+document.getElementById("team-next")?.addEventListener("click", () => { nextTeam(); render(); });
+
+// Ao cruzar o breakpoint mobile/desktop (ex.: girar o aparelho), re-renderiza e
+// reavalia os rodízios para o novo tamanho (mobile mostra tudo; TV/desktop roda).
+window.matchMedia("(max-width: 768px)").addEventListener("change", () => {
+    render();
+    startTeamCarousel();
+});
 
 // Relógio do cabeçalho: atualiza a cada segundo.
 updateClock();

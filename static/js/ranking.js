@@ -1,5 +1,5 @@
 // Widget "Tickets por Responsável": pódio (top 3) + carrossel do restante.
-import { escapeHtml, getFirstAndLastName } from "./util.js";
+import { escapeHtml, getFirstAndLastName, ehMobile } from "./util.js";
 import { currentTickets } from "./view.js";
 
 // Mapa de avatares por owner.id (imagens em static/avatars).
@@ -92,7 +92,8 @@ function renderCarouselTable() {
     const totalPages = Math.ceil(remainingOwners.length / ITEMS_PER_PAGE);
     const perPage = Math.ceil(remainingOwners.length / totalPages); // distribui igual entre as paginas (evita pagina quase vazia)
     const startIndex = currentCarouselPage * perPage;
-    const pageData = remainingOwners.slice(startIndex, startIndex + perPage);
+    // Mobile: mostra todos os responsáveis com rolagem (sem paginação); TV/desktop: página do carrossel.
+    const pageData = ehMobile() ? remainingOwners : remainingOwners.slice(startIndex, startIndex + perPage);
     const maxCount = Math.max(...remainingOwners.map(([, info]) => info.count), 1);
 
     const rows = pageData.map(([ownerId, info]) => {
@@ -118,7 +119,7 @@ function renderCarouselTable() {
             <tbody>${rows}</tbody>
         </table>`;
 
-    if (carouselData.length > 10 && totalPages > 1) {
+    if (carouselData.length > 10 && totalPages > 1 && !ehMobile()) {
         html += `<div class="carousel-page">Página ${currentCarouselPage + 1} de ${totalPages}</div>`;
     }
     container.innerHTML = html;
@@ -126,6 +127,7 @@ function renderCarouselTable() {
 
 function startCarousel() {
     if (carouselInterval) clearTimeout(carouselInterval);
+    if (ehMobile()) return; // mobile: lista completa com rolagem, sem rodízio
 
     const remainingOwners = carouselData.slice(3);
     const totalPages = Math.ceil(remainingOwners.length / ITEMS_PER_PAGE);

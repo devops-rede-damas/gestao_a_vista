@@ -17,3 +17,10 @@ export function getFirstAndLastName(owner) {
     if (names.length === 1) return names[0];
     return `${names[0]} ${names[names.length - 1]}`;
 }
+
+// True quando a tela é estreita (celular/tablet, <=768px). Usado para dar
+// comportamento próprio no mobile (mostrar tudo com rolagem) SEM afetar a TV,
+// que é sempre grande e nunca cai neste ramo.
+export function ehMobile() {
+    return window.matchMedia("(max-width: 768px)").matches;
+}
