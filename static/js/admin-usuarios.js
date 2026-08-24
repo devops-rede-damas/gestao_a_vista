@@ -174,10 +174,17 @@
   // ── Ações da tabela (delegação de evento) ────────────────────────────────
   document.querySelector("#tabela-usuarios tbody").addEventListener("click", function (e) {
     var botao = e.target.closest("button[data-acao]");
-    if (!botao) return;
-    var id = Number(botao.getAttribute("data-id"));
-    var row = tabela.rows().data().toArray().find(function (r) { return r.id === id; });
-    if (row) abrirEdicao(row);
+    if (botao) {
+      var id = Number(botao.getAttribute("data-id"));
+      var row = tabela.rows().data().toArray().find(function (r) { return r.id === id; });
+      if (row) abrirEdicao(row);
+      return;
+    }
+    // Acordeão (só no mobile): tocar no cartão expande/colapsa os demais campos.
+    if (window.matchMedia("(max-width: 768px)").matches) {
+      var tr = e.target.closest("tr");
+      if (tr) tr.classList.toggle("expandido");
+    }
   });
 
   // ── Criar / Editar ───────────────────────────────────────────────────────
