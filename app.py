@@ -11,6 +11,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, ses
 
 from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
+from core.avatars import carregar_catalogo
 from core.webauth import auth_bp, login_obrigatorio, redirecionar_sem_acesso, resolver_usuario, setor_autorizado
 from performance_api import performance_bp
 from admin_api import admin_bp
@@ -119,6 +120,11 @@ def _fetch_tickets(setor="ti"):
         return None
 
 
+def _avatars_urls():
+    """Mapa owner.id -> URL estatica da foto enviada (catalogo). {} se vazio/inexistente."""
+    return {oid: url_for("static", filename=f"avatars/{arquivo}") for oid, arquivo in carregar_catalogo().items()}
+
+
 @app.route("/gv_movidesk")
 @login_obrigatorio
 def gv_movidesk():
@@ -126,7 +132,7 @@ def gv_movidesk():
         return redirecionar_sem_acesso("ti")
     tickets = _fetch_tickets("ti")
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado)
+    return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls())
 
 
 @app.route("/painel/<setor>")
@@ -138,7 +144,7 @@ def painel(setor):
         return redirecionar_sem_acesso(setor)
     tickets = _fetch_tickets(setor)
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado)
+    return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls())
 
 
 @app.route("/api/tickets")

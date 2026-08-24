@@ -1,5 +1,5 @@
 // Widget "Tickets por Responsável": pódio (top 3) + carrossel do restante.
-import { escapeHtml, getFirstAndLastName, ehMobile } from "./util.js";
+import { escapeHtml, getFirstAndLastName, ehMobile, initialsAvatar } from "./util.js";
 import { currentTickets } from "./view.js";
 
 // Mapa de avatares por owner.id (imagens em static/avatars).
@@ -34,13 +34,16 @@ const OTHER_PAGES_INTERVAL = 6000;
 const ITEMS_PER_PAGE = 10;
 
 function avatarUrlFor(ownerId, name) {
-    return ownerAvatars[ownerId] || "https://ui-avatars.com/api/?name=" + encodeURIComponent(name);
+    const enviadas = window.avatars || {};
+    if (enviadas[ownerId]) return enviadas[ownerId];          // foto enviada pelo admin (nome c/ timestamp = cache-busting)
+    if (ownerAvatars[ownerId]) return ownerAvatars[ownerId]; // legado (as 19 do commit inicial)
+    return initialsAvatar(name);                             // iniciais geradas localmente (sem servico externo)
 }
 
-// Fallback quando o arquivo de avatar não existe.
+// Fallback quando o arquivo de avatar nao carrega (ex.: sumiu): iniciais locais.
 function avatarOnError(name) {
-    const safeName = encodeURIComponent(name).replace(/'/g, "%27");
-    return `this.onerror=null;this.src='https://ui-avatars.com/api/?name=${safeName}'`;
+    const uri = initialsAvatar(name).replace(/'/g, "\\'");
+    return `this.onerror=null;this.src='${uri}'`;
 }
 
 export function renderOwnerRank() {

@@ -88,6 +88,7 @@
         window.tickets = {{ tickets | tojson | safe }};
         window.setor = {{ setor | tojson | safe }};
         window.exibicao = {{ exibicao | tojson | safe }};
+        window.avatars = {{ (avatars or {}) | tojson | safe }};
     </script>
     <script>
         // Toast de aviso (redirect sem acesso): some sozinho apos alguns segundos.
