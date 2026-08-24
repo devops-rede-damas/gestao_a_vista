@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fotos dos responsáveis — Gestão à Vista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin-usuarios.css') }}">
+</head>
+<body class="admin-page">
+
+  <header class="admin-topbar">
+    <img src="{{ url_for('static', filename='img/logo_branco.svg') }}" alt="Rede Damas" class="admin-topbar-logo">
+    <span class="admin-topbar-title">Gestão à Vista</span>
+    <nav class="admin-nav">
+      <a href="{{ url_for('admin.usuarios') }}" class="admin-nav-link{% if active == 'usuarios' %} active{% endif %}">Usuários</a>
+      <a href="{{ url_for('admin.fotos') }}" class="admin-nav-link{% if active == 'fotos' %} active{% endif %}">Fotos</a>
+    </nav>
+    <span class="admin-topbar-spacer"></span>
+    {% if session.usuario %}<span class="admin-topbar-user">{{ session.usuario.email }}</span>{% endif %}
+    <a href="{{ url_for('auth.logout') }}">Sair</a>
+  </header>
+
+  <div class="admin-wrap">
+    <div class="admin-head">
+      <div>
+        <div class="admin-titlebar">
+          <h1 class="admin-title">Painel Admin</h1>
+          <span class="admin-title-sep" aria-hidden="true">·</span>
+          <span class="admin-subtitle">Fotos dos responsáveis</span>
+        </div>
+        <p class="admin-desc">Envie ou troque a foto dos responsáveis exibidos no ranking do painel. Formatos: JPG, PNG ou WEBP — máx. 2 MB.</p>
+      </div>
+    </div>
+
+    <!-- Busca -->
+    <div class="admin-filters">
+      <div class="filters-row">
+        <div class="filter-field">
+          <label for="f-busca">Buscar</label>
+          <div class="input-icon">
+            <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="f-busca" placeholder="Buscar por nome…" autocomplete="off">
+          </div>
+        </div>
+      </div>
+      <div class="filters-foot">
+        <span class="filter-count" id="fotos-count"></span>
+      </div>
+    </div>
+
+    <!-- Lista -->
+    <div class="admin-card">
+      <div id="fotos-lista" class="fotos-lista"></div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script src="{{ url_for('static', filename='js/admin-fotos.js') }}" type="module"></script>
+</body>
+</html>

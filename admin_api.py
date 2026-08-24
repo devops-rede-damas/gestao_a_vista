@@ -13,9 +13,11 @@ Exclusão não existe: usuários são apenas ativados/inativados (ativo=0).
 import logging
 import secrets
 
-from flask import Blueprint, abort, jsonify, render_template, request
+import requests
+from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
 from core.auth import hash_senha
+from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
 from core.sectors import available_sectors, sector_display
 from core.usuarios import (
     atualizar_usuario,
@@ -27,6 +29,7 @@ from core.usuarios import (
     listar_para_admin,
 )
 from core.webauth import papel_obrigatorio
+from services.movidesk_api import get_open_tickets_owners
 
 logger = logging.getLogger(__name__)
 
@@ -68,7 +71,15 @@ def usuarios():
         "admin/usuarios.html",
         setores=setores,
         papeis=sorted(_PAPEIS_VALIDOS),
+        active="usuarios",
     )
+
+
+@admin_bp.route("/admin/fotos")
+@papel_obrigatorio("ADM")
+def fotos():
+    """Tela de gestão das fotos (avatares) dos responsáveis pelos tickets."""
+    return render_template("admin/fotos.html", active="fotos")
 
 
 # ── API (JSON) ─────────────────────────────────────────────────────────────────
@@ -212,3 +223,52 @@ def api_ativo(uid):
     definir_ativo(uid, ativo)
     logger.info("ADM %s o usuário id=%s", "ativou" if ativo else "inativou", uid)
     return jsonify({"id": uid, "ativo": ativo})
+
+
+# ── Fotos dos responsáveis (avatares) ──────────────────────────────────────────
+def _foto_url(arquivo):
+    """URL estática de uma foto (ou None). Isola a montagem de URL da camada de domínio."""
+    return url_for("static", filename=f"avatars/{arquivo}") if arquivo else None
+
+
+@admin_bp.route("/admin/api/responsaveis", methods=["GET"])
+@papel_obrigatorio("ADM")
+def api_responsaveis():
+    """Lista os responsáveis com ticket aberto + a foto atual (ou None)."""
+    try:
+        tickets = get_open_tickets_owners()
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Falha ao listar responsáveis: %s", exc)
+        return jsonify({"erro": "Não foi possível consultar o Movidesk."}), 503
+    itens = listar_responsaveis(tickets)
+    for item in itens:
+        item["foto_url"] = _foto_url(item.get("arquivo"))
+    return jsonify(itens)
+
+
+@admin_bp.route("/admin/api/responsaveis/<owner_id>/foto", methods=["POST"])
+@papel_obrigatorio("ADM")
+def api_foto_upload(owner_id):
+    arquivo = request.files.get("foto")
+    if arquivo is None:
+        return jsonify({"erro": "Envie o arquivo no campo 'foto'."}), 400
+    try:
+        nome = salvar_foto(owner_id, arquivo.read())
+    except AvatarInvalido as exc:
+        return jsonify({"erro": str(exc)}), 400
+    except AvatarConfigError as exc:
+        logger.warning("Falha ao salvar foto de %s: %s", owner_id, exc)
+        return jsonify({"erro": "Não foi possível salvar a imagem."}), 500
+    logger.info("ADM enviou foto do responsável %s (%s)", owner_id, nome)
+    return jsonify({"id": str(owner_id), "arquivo": nome, "foto_url": _foto_url(nome)})
+
+
+@admin_bp.route("/admin/api/responsaveis/<owner_id>/foto", methods=["DELETE"])
+@papel_obrigatorio("ADM")
+def api_foto_remover(owner_id):
+    try:
+        removido = remover_foto(owner_id)
+    except AvatarInvalido as exc:
+        return jsonify({"erro": str(exc)}), 400
+    logger.info("ADM removeu a foto do responsável %s (havia=%s)", owner_id, removido)
+    return jsonify({"id": str(owner_id), "removido": removido})

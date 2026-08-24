@@ -7,6 +7,13 @@ config/tokens.json
 # Usuários do painel de gestão (hashes de senha) — segredos, NUNCA versionar
 config/usuarios.json
 
+# Catálogo de fotos de avatar (gerado em runtime pelos uploads do admin)
+config/avatars.json
+
+# Fotos enviadas pelo admin (runtime, vivem no servidor). As 19 legadas já
+# versionadas permanecem — o Git não desrastreia arquivos já rastreados.
+static/avatars/*
+
 # Ambiente virtual
 venv/
 .venv/
