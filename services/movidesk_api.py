@@ -3,7 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-from core.sectors import build_filter, build_day_filter
+from core.sectors import build_filter, build_day_filter, build_open_filter
 
 # Carrega as variáveis do arquivo .env automaticamente.
 load_dotenv()
@@ -45,6 +45,38 @@ def get_window_tickets(setor, desde, session=None, page_size=1000, max_pages=20)
         "token": os.getenv("MOVIDESK_TOKEN"),
         "$select": _WINDOW_SELECT,
         "$filter": build_day_filter(setor, desde),
+    }
+    coletados = []
+    for pagina in range(max_pages):
+        params = {**base, "$top": page_size, "$skip": pagina * page_size}
+        response = http.get(BASE_URL, params=params, timeout=60)
+        response.raise_for_status()
+        lote = response.json()
+        coletados.extend(lote)
+        if len(lote) < page_size:
+            break
+    return coletados
+
+
+# $select mínimo: só o id do ticket; o dado que interessa (o dono) vem no $expand.
+_OWNERS_SELECT = "id"
+
+
+def get_open_tickets_owners(session=None, page_size=1000, max_pages=20):
+    """Busca, com paginação, os tickets EM ABERTO de QUALQUER equipe trazendo só o dono.
+
+    Read-only. Base para a gestão de fotos de avatar: cobre todos os responsáveis com
+    ticket aberto, sem recorte de setor (usa build_open_filter). Cada item traz `owner`
+    (id + businessName); a deduplicação por responsável é feita na camada de domínio.
+    Paginação via $skip (o Movidesk não fornece total; para quando a página vem com
+    menos itens que page_size). <session> opcional reaproveita a conexão.
+    """
+    http = session or requests
+    base = {
+        "token": os.getenv("MOVIDESK_TOKEN"),
+        "$select": _OWNERS_SELECT,
+        "$filter": build_open_filter(),
+        "$expand": "owner($select=id,businessName)",
     }
     coletados = []
     for pagina in range(max_pages):

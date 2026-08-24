@@ -104,6 +104,18 @@ def build_filter(setor, cfg=None):
     return " and ".join(partes)
 
 
+def build_open_filter(cfg=None):
+    """$filter OData dos tickets EM ABERTO de QUALQUER equipe (sem recorte de setor).
+
+    Reaproveita a mesma lista `_comum.excluir_base_status` do build_filter, só que
+    sem o escopo de setor — para listar os responsáveis (donos) que têm ticket aberto,
+    independentemente do setor. Puro: não conhece Flask/HTTP.
+    """
+    cfg = cfg or load_config()
+    excluidos = cfg.get("_comum", {}).get("excluir_base_status", [])
+    return " and ".join(f"(baseStatus ne '{_escape(s)}')" for s in excluidos)
+
+
 # Campos de data que marcam "atividade" de um ticket, usados na janela histórica.
 _DAY_ACTIVITY_FIELDS = ("createdDate", "resolvedIn", "closedIn", "canceledIn")
 
