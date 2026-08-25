@@ -18,8 +18,8 @@
       "regras": [
         { "equipe": "Atendimento e Suporte CSC TIC" },
         { "equipe": "Atendimento CAD CPQ" },
-        { "equipe": "Atendimento Admissão Digital", "responsaveis": ["Daniel Souza", "Mailonga Alburquerque Ferreira"] },
-        { "equipe": "Atendimento CSC Matrículas", "responsaveis": ["Murilo Cunha", "Ricaelle Mesquita Menezes"] }
+        { "equipe": "Atendimento Admissão Digital", "responsaveis": ["Daniel Souza", "Mailonga Albuquerque Ferreira", "Patrícia Borges da Silva"] },
+        { "equipe": "Atendimento CSC Matrículas", "responsaveis": ["Murilo Cunha", "Ricaelle Mesquita Menezes", "Ana Flávia Ferreira"] }
       ],
       "excluir_clientes": ["404751698"]
     },
