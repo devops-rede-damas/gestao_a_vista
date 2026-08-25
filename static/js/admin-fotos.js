@@ -15,13 +15,24 @@ const TIPOS_OK = ["image/jpeg", "image/png", "image/webp"];
 
 let responsaveis = [];
 
+// Icones SVG estaticos (conteudo fixo, nao vem do usuario -> seguro em innerHTML).
+const TOAST_ICONES = {
+  ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+  erro: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="13"/><line x1="12" y1="16.5" x2="12" y2="16.5"/></svg>',
+};
+
 function toast(mensagem, tipo, titulo) {
   const wrap = document.getElementById("toast-wrap");
   const el = document.createElement("div");
   el.className = "toast toast-" + (tipo || "ok");
-  el.innerHTML = (titulo ? '<span class="toast-title">' + escapeHtml(titulo) + "</span>" : "") + escapeHtml(mensagem);
+  const corpo = (titulo ? '<span class="toast-title">' + escapeHtml(titulo) + "</span>" : "") + escapeHtml(mensagem);
+  el.innerHTML = '<span class="toast-icon">' + (TOAST_ICONES[tipo] || TOAST_ICONES.ok) + '</span><span class="toast-body">' + corpo + "</span>";
   wrap.appendChild(el);
-  setTimeout(() => el.remove(), tipo === "erro" ? 6000 : 3500);
+  const vida = tipo === "erro" ? 6000 : 3500;
+  setTimeout(() => {
+    el.classList.add("toast-hide");
+    setTimeout(() => el.remove(), 260);
+  }, vida);
 }
 
 function avatarSrc(r) {
@@ -89,9 +100,10 @@ async function enviar(id, file, item) {
     const dados = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error(dados.erro || "Erro ao enviar");
     const r = responsaveis.find((x) => x.id === id);
+    const tinhaFoto = !!(r && r.foto_url);
     if (r) { r.foto_url = dados.foto_url; r.arquivo = dados.arquivo; }
     render();
-    toast("Foto atualizada.", "ok");
+    toast(tinhaFoto ? "Foto substituída." : "Foto salva.", "ok");
   } catch (e) {
     toast(e.message, "erro", "Não foi possível enviar");
     setBusy(item, false);
