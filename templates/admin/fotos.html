@@ -45,9 +45,23 @@
             <input type="text" id="f-busca" placeholder="Buscar por nome…" autocomplete="off">
           </div>
         </div>
+        <div class="filter-field">
+          <label>Equipe</label>
+          <div class="multi" id="f-equipe">
+            <button type="button" class="multi-toggle" id="f-equipe-toggle" aria-haspopup="true" aria-expanded="false">
+              <span class="multi-label">Todas as equipes</span>
+              <svg class="multi-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="multi-menu" id="f-equipe-menu" hidden></div>
+          </div>
+        </div>
       </div>
       <div class="filters-foot">
         <span class="filter-count" id="fotos-count"></span>
+        <button type="button" class="btn btn-ghost btn-sm btn-limpar" id="btn-limpar" hidden>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v6h6"/><path d="M3.5 8a9 9 0 1 0 2-3"/></svg>
+          <span>Limpar filtros</span>
+        </button>
       </div>
     </div>
 

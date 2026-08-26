@@ -67,8 +67,10 @@ def listar_responsaveis(tickets, catalogo=None):
     """Deduplica os donos dos tickets e junta com o catálogo de fotos.
 
     <tickets>: lista de services.movidesk_api.get_open_tickets_owners (cada item tem
-    'owner' com id + businessName). Retorna uma lista ORDENADA por nome:
-        [{ "id": "123", "nome": "Fulano", "arquivo": "123.jpg" | None }]
+    'owner' com id + businessName, e 'ownerTeam' com a equipe). Retorna uma lista
+    ORDENADA por nome, com as equipes agregadas (uma pessoa pode ter tickets em
+    várias equipes):
+        [{ "id": "123", "nome": "Fulano", "arquivo": "123.jpg" | None, "equipes": ["Equipe A"] }]
     Ignora tickets sem dono (owner ausente/sem id).
     """
     catalogo = carregar_catalogo() if catalogo is None else catalogo
@@ -79,11 +81,13 @@ def listar_responsaveis(tickets, catalogo=None):
         if not oid:
             continue
         oid = str(oid)
-        if oid not in por_id:
-            por_id[oid] = owner.get("businessName") or ""
+        registro = por_id.setdefault(oid, {"nome": owner.get("businessName") or "", "equipes": set()})
+        equipe = ticket.get("ownerTeam")
+        if equipe:
+            registro["equipes"].add(equipe)
     responsaveis = [
-        {"id": oid, "nome": nome, "arquivo": catalogo.get(oid)}
-        for oid, nome in por_id.items()
+        {"id": oid, "nome": dados["nome"], "arquivo": catalogo.get(oid), "equipes": sorted(dados["equipes"])}
+        for oid, dados in por_id.items()
     ]
     responsaveis.sort(key=lambda r: (r["nome"] or "").lower())
     return responsaveis

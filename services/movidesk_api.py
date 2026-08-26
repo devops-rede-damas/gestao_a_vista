@@ -58,8 +58,9 @@ def get_window_tickets(setor, desde, session=None, page_size=1000, max_pages=20)
     return coletados
 
 
-# $select mínimo: só o id do ticket; o dado que interessa (o dono) vem no $expand.
-_OWNERS_SELECT = "id"
+# $select do ticket: id + ownerTeam (a equipe); o dono vem no $expand. A equipe
+# alimenta o filtro por equipe da tela de Fotos.
+_OWNERS_SELECT = "id,ownerTeam"
 
 
 def get_open_tickets_owners(session=None, page_size=1000, max_pages=20):

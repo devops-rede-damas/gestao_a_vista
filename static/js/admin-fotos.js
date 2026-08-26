@@ -14,6 +14,7 @@ const MAX_BYTES = 2 * 1024 * 1024;              // espelha o limite do backend
 const TIPOS_OK = ["image/jpeg", "image/png", "image/webp"];
 
 let responsaveis = [];
+const equipesSel = new Set(); // equipes marcadas no filtro (multi-selecao)
 
 // Icones SVG estaticos (conteudo fixo, nao vem do usuario -> seguro em innerHTML).
 const TOAST_ICONES = {
@@ -63,15 +64,16 @@ function itemHtml(r) {
 
 function render() {
   const termo = (document.getElementById("f-busca").value || "").trim().toLowerCase();
-  const filtrados = termo
-    ? responsaveis.filter((r) => (r.nome || "").toLowerCase().includes(termo))
-    : responsaveis;
+  let filtrados = responsaveis;
+  if (termo) filtrados = filtrados.filter((r) => (r.nome || "").toLowerCase().includes(termo));
+  if (equipesSel.size) filtrados = filtrados.filter((r) => (r.equipes || []).some((e) => equipesSel.has(e)));
   document.getElementById("fotos-lista").innerHTML =
     filtrados.map(itemHtml).join("") || '<tr><td colspan="4" class="foto-vazio">Nenhum responsável encontrado.</td></tr>';
   const total = responsaveis.length;
   document.getElementById("fotos-count").textContent = filtrados.length === total
     ? total + (total === 1 ? " responsável" : " responsáveis")
     : filtrados.length + " de " + total + " responsáveis";
+  document.getElementById("btn-limpar").hidden = !(termo || equipesSel.size);
 }
 
 async function carregar() {
@@ -81,6 +83,7 @@ async function carregar() {
     const resp = await fetch(API);
     if (!resp.ok) throw new Error("Falha ao carregar");
     responsaveis = await resp.json();
+    popularEquipes();
     render();
   } catch (e) {
     lista.innerHTML = '<tr><td colspan="4" class="foto-vazio">Não foi possível carregar os responsáveis.</td></tr>';
@@ -145,6 +148,57 @@ document.getElementById("fotos-lista").addEventListener("click", (e) => {
   const item = e.target.closest(".foto-item");
   remover(item.dataset.id, item);
 });
+// Popula o dropdown (checkboxes) com as equipes distintas dos responsaveis carregados.
+function popularEquipes() {
+  const set = new Set();
+  responsaveis.forEach((r) => (r.equipes || []).forEach((e) => set.add(e)));
+  document.getElementById("f-equipe-menu").innerHTML = [...set].sort().map((e) => `
+    <label class="multi-option" title="${escapeHtml(e)}">
+      <input type="checkbox" value="${escapeHtml(e)}"${equipesSel.has(e) ? " checked" : ""}>
+      <span>${escapeHtml(e)}</span>
+    </label>`).join("");
+  atualizarLabelEquipe();
+}
+
+function atualizarLabelEquipe() {
+  const n = equipesSel.size;
+  document.querySelector("#f-equipe .multi-label").textContent =
+    n ? `${n} equipe${n > 1 ? "s" : ""}` : "Todas as equipes";
+}
+
 document.getElementById("f-busca").addEventListener("input", render);
+
+// Multi-select de equipe: abre/fecha, marca checkboxes, fecha ao clicar fora.
+const multiEquipe = document.getElementById("f-equipe");
+const toggleEquipe = document.getElementById("f-equipe-toggle");
+const menuEquipe = document.getElementById("f-equipe-menu");
+toggleEquipe.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const abrir = menuEquipe.hidden;
+  menuEquipe.hidden = !abrir;
+  toggleEquipe.setAttribute("aria-expanded", String(abrir));
+});
+menuEquipe.addEventListener("change", (e) => {
+  const cb = e.target.closest("input[type=checkbox]");
+  if (!cb) return;
+  if (cb.checked) equipesSel.add(cb.value); else equipesSel.delete(cb.value);
+  atualizarLabelEquipe();
+  render();
+});
+document.addEventListener("click", (e) => {
+  if (!multiEquipe.contains(e.target)) {
+    menuEquipe.hidden = true;
+    toggleEquipe.setAttribute("aria-expanded", "false");
+  }
+});
+
+// Limpa busca + equipes selecionadas (aparece so quando ha filtro ativo).
+document.getElementById("btn-limpar").addEventListener("click", () => {
+  document.getElementById("f-busca").value = "";
+  equipesSel.clear();
+  menuEquipe.querySelectorAll("input[type=checkbox]").forEach((cb) => (cb.checked = false));
+  atualizarLabelEquipe();
+  render();
+});
 
 carregar();
