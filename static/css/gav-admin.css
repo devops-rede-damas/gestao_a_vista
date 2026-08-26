@@ -252,20 +252,24 @@
   .toast, .toast.toast-hide { animation: none; }
 }
 
-/* ── Ajustes no DataTables (herdando as cores da marca) ─────────── */
-.admin-page table.dataTable { border-collapse: collapse; }
-.admin-page table.dataTable thead th {
+/* ── Tabela admin (base reutilizavel: .admin-table) ─────────── */
+/* Visual da tabela, desacoplado do DataTables. Ambas as telas admin usam
+   `.admin-table`. Os extras exclusivos de Usuarios (acordeao, pontinho de
+   status, chevron, rotulos fixos, controles .dt-*) seguem presos a `.dataTable`,
+   que so a tela de Usuarios possui. */
+.admin-page .admin-table { border-collapse: collapse; }
+.admin-page .admin-table thead th {
   font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em;
   color: #475569; background: linear-gradient(180deg, #e9eef5 0%, #dfe6ef 100%);
-  padding: 13px 16px; border-bottom: 1px solid var(--bd); white-space: nowrap;
+  padding: 13px 16px; border-bottom: 1px solid var(--bd); white-space: nowrap; text-align: left;
 }
-.admin-page table.dataTable thead th:first-child { border-top-left-radius: 10px; }
-.admin-page table.dataTable thead th:last-child  { border-top-right-radius: 10px; }
-.admin-page table.dataTable tbody td {
+.admin-page .admin-table thead th:first-child { border-top-left-radius: 10px; }
+.admin-page .admin-table thead th:last-child  { border-top-right-radius: 10px; }
+.admin-page .admin-table tbody td {
   font-size: 14px; color: var(--ink-2); padding: 12px 16px;
   border-bottom: 1px solid var(--bd-soft); vertical-align: middle;
 }
-.admin-page table.dataTable tbody tr:hover td { background: #f6f9fc; }
+.admin-page .admin-table tbody tr:hover td { background: #f6f9fc; }
 .admin-page .dt-paging button.current {
   background: var(--brand) !important; border-color: var(--brand) !important; color: #fff !important;
 }
@@ -298,28 +302,28 @@
 
   /* ── Tabela vira CARTÕES (uma coluna por linha, com rótulo) ───── */
   .admin-card { padding: 8px 10px 12px; }
-  .admin-page table.dataTable thead { display: none; }
-  .admin-page table.dataTable,
-  .admin-page table.dataTable tbody,
-  .admin-page table.dataTable tr,
-  .admin-page table.dataTable tbody td { display: block; width: 100% !important; }
+  .admin-page .admin-table thead { display: none; }
+  .admin-page .admin-table,
+  .admin-page .admin-table tbody,
+  .admin-page .admin-table tr,
+  .admin-page .admin-table tbody td { display: block; width: 100% !important; }
 
-  .admin-page table.dataTable tr {
+  .admin-page .admin-table tr {
     border: 1px solid var(--bd); border-radius: 12px;
     margin-bottom: 12px; background: #fff; overflow: hidden;
     box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
   }
 
-  .admin-page table.dataTable tbody td {
+  .admin-page .admin-table tbody td {
     display: flex; align-items: center; justify-content: space-between; gap: 14px;
     padding: 10px 14px; text-align: right; white-space: normal;
     word-break: break-word; overflow-wrap: anywhere;
     border-bottom: 1px solid var(--bd-soft);
   }
-  .admin-page table.dataTable tbody td:last-child { border-bottom: none; }
+  .admin-page .admin-table tbody td:last-child { border-bottom: none; }
 
-  /* Rótulo (nome da coluna) à esquerda de cada valor */
-  .admin-page table.dataTable tbody td:not(.dt-empty)::before {
+  /* Rótulo (nome da coluna) à esquerda de cada valor, via data-rotulo */
+  .admin-page .admin-table tbody td:not(.dt-empty)::before {
     content: attr(data-rotulo);
     flex-shrink: 0; text-align: left;
     font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
@@ -376,26 +380,36 @@
 .admin-nav-link:hover { background: rgba(255,255,255,.12); color: #fff; }
 .admin-nav-link.active { color: #fff; background: rgba(255,255,255,.16); }
 
-/* ── Lista de fotos dos responsáveis ───────────────────── */
-.fotos-lista { display: flex; flex-direction: column; }
-.foto-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 8px; border-bottom: 1px solid var(--bd-soft);
+/* ── Tela de Fotos: miniatura de avatar + chip "Sem foto" ───── */
+.foto-mini {
+  width: 40px; height: 40px; border-radius: 50%; object-fit: cover;
+  background: #eef2f7; border: 1px solid var(--bd); display: block;
 }
-.foto-item:last-child { border-bottom: none; }
-.foto-avatar {
-  width: 48px; height: 48px; border-radius: 50%; object-fit: cover;
-  flex-shrink: 0; background: #eef2f7; border: 1px solid var(--bd);
-}
-.foto-nome { flex: 1; font-weight: 600; color: var(--ink-2); min-width: 0; word-break: break-word; }
-.foto-acoes { display: flex; gap: 8px; flex-shrink: 0; }
+.chip-neutro { background: var(--bd-soft); color: var(--ink-3); }
 .foto-upload { cursor: pointer; }
 .foto-vazio { padding: 22px 8px; color: var(--ink-4); text-align: center; }
 
-@media (max-width: 640px) {
-  .foto-item { flex-wrap: wrap; }
-  .foto-acoes { flex: 1 1 100%; }
-  .foto-acoes .btn { flex: 1; justify-content: center; }
+/* Larguras enxutas das colunas (desktop): Nome ocupa o resto */
+.admin-page .admin-table--fotos thead th:nth-child(1) { width: 64px; }
+.admin-page .admin-table--fotos thead th:nth-child(3) { width: 140px; }
+.admin-page .admin-table--fotos thead th:nth-child(4) { width: 200px; }
+
+/* Zebra (linhas alternadas) — so no desktop; hover continua vencendo */
+@media (min-width: 769px) {
+  .admin-page .admin-table--fotos tbody tr:nth-child(even) td { background: #fafbfd; }
+  .admin-page .admin-table--fotos tbody tr:hover td { background: #f6f9fc; }
+}
+
+/* Fotos no mobile: cartao compacto de 3 linhas (Nome / Foto+Situacao / Acoes),
+   economizando uma linha. Escopado em .admin-table--fotos p/ nao afetar Usuarios. */
+@media (max-width: 768px) {
+  .admin-page .admin-table--fotos tbody tr { display: flex; flex-wrap: wrap; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Nome"]     { order: 1; flex: 1 1 100%; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Foto"]     { order: 2; flex: 0 0 auto; width: auto !important; justify-content: flex-start; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Situação"] { order: 3; flex: 1 1 auto; width: auto !important; justify-content: flex-end; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Ações"]    { order: 4; flex: 1 1 100%; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Foto"]::before,
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Situação"]::before { content: none; }
 }
 /* ── Celular pequeno: enxuga a topbar e o modal ────────────────── */
 @media (max-width: 480px) {

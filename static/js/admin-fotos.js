@@ -41,18 +41,24 @@ function avatarSrc(r) {
 
 function itemHtml(r) {
   const temFoto = !!r.foto_url;
-  return `<div class="foto-item" data-id="${escapeHtml(r.id)}">
-    <img class="foto-avatar" src="${escapeHtml(avatarSrc(r))}" alt=""
-         onerror="this.onerror=null;this.src='${escapeHtml(initialsAvatar(r.nome))}'">
-    <span class="foto-nome">${escapeHtml(r.nome)}</span>
-    <div class="foto-acoes">
-      <label class="btn btn-sm btn-gerenciar foto-upload">
-        <span>${temFoto ? "Trocar" : "Enviar foto"}</span>
-        <input type="file" accept="image/jpeg,image/png,image/webp" hidden>
-      </label>
-      ${temFoto ? '<button type="button" class="btn btn-sm btn-danger foto-remover">Remover</button>' : ""}
-    </div>
-  </div>`;
+  const situacao = temFoto
+    ? '<span class="chip chip-ativo">Com foto</span>'
+    : '<span class="chip chip-neutro">Sem foto</span>';
+  return `<tr class="foto-item" data-id="${escapeHtml(r.id)}">
+    <td data-rotulo="Foto"><img class="foto-mini" src="${escapeHtml(avatarSrc(r))}" alt=""
+         onerror="this.onerror=null;this.src='${escapeHtml(initialsAvatar(r.nome))}'"></td>
+    <td data-rotulo="Nome">${escapeHtml(r.nome)}</td>
+    <td data-rotulo="Situação">${situacao}</td>
+    <td data-rotulo="Ações">
+      <div class="row-actions">
+        <label class="btn btn-sm btn-gerenciar foto-upload">
+          <span>${temFoto ? "Trocar" : "Enviar foto"}</span>
+          <input type="file" accept="image/jpeg,image/png,image/webp" hidden>
+        </label>
+        ${temFoto ? '<button type="button" class="btn btn-sm btn-danger foto-remover">Remover</button>' : ""}
+      </div>
+    </td>
+  </tr>`;
 }
 
 function render() {
@@ -61,7 +67,7 @@ function render() {
     ? responsaveis.filter((r) => (r.nome || "").toLowerCase().includes(termo))
     : responsaveis;
   document.getElementById("fotos-lista").innerHTML =
-    filtrados.map(itemHtml).join("") || '<div class="foto-vazio">Nenhum responsável encontrado.</div>';
+    filtrados.map(itemHtml).join("") || '<tr><td colspan="4" class="foto-vazio">Nenhum responsável encontrado.</td></tr>';
   const total = responsaveis.length;
   document.getElementById("fotos-count").textContent = filtrados.length === total
     ? total + (total === 1 ? " responsável" : " responsáveis")
@@ -70,14 +76,14 @@ function render() {
 
 async function carregar() {
   const lista = document.getElementById("fotos-lista");
-  lista.innerHTML = '<div class="foto-vazio">Carregando…</div>';
+  lista.innerHTML = '<tr><td colspan="4" class="foto-vazio">Carregando…</td></tr>';
   try {
     const resp = await fetch(API);
     if (!resp.ok) throw new Error("Falha ao carregar");
     responsaveis = await resp.json();
     render();
   } catch (e) {
-    lista.innerHTML = '<div class="foto-vazio">Não foi possível carregar os responsáveis.</div>';
+    lista.innerHTML = '<tr><td colspan="4" class="foto-vazio">Não foi possível carregar os responsáveis.</td></tr>';
     toast("Não foi possível carregar a lista.", "erro");
   }
 }

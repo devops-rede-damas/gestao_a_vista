@@ -2,7 +2,7 @@
 import { escapeHtml, ehMobile } from "./util.js";
 import { currentTickets } from "./view.js";
 
-// Classes de cor por status de SLA (definidas em static/css/gta.css).
+// Classes de cor por status de SLA (definidas em static/css/gav-painel.css).
 const SLA_STATUS_CLASS = {
     "SLA a Vencer": "sla-avencer",
     "SLA Vencido": "sla-vencido",

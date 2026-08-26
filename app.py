@@ -132,7 +132,7 @@ def gv_movidesk():
         return redirecionar_sem_acesso("ti")
     tickets = _fetch_tickets("ti")
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gta.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls())
+    return render_template("gav-painel.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls())
 
 
 @app.route("/painel/<setor>")
@@ -144,7 +144,7 @@ def painel(setor):
         return redirecionar_sem_acesso(setor)
     tickets = _fetch_tickets(setor)
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gta.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls())
+    return render_template("gav-painel.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls())
 
 
 @app.route("/api/tickets")

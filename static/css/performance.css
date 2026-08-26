@@ -1,6 +1,6 @@
 /* Dashboard 2 — Performance / Gestao a Vista.
    Estilos ESCOPADOS sob #view-perf e body.perf-ativa; reaproveitam os tokens de
-   identidade do Dashboard 1 (definidos em gta.css). Nao afetam a fila (#main-flex). */
+   identidade do Dashboard 1 (definidos em gav-painel.css). Nao afetam a fila (#main-flex). */
 :root {
     --perf-green: #34d399;   /* bom / dentro do SLA */
     --perf-red: #f87171;     /* estourado / piorou */

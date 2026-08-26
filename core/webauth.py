@@ -199,14 +199,14 @@ def login():
         chave = _chave_rate(email)
 
         if _bloqueado(chave):
-            return render_template("login.html", erro="Muitas tentativas. Aguarde alguns minutos e tente novamente."), 429
+            return render_template("gav-login.html", erro="Muitas tentativas. Aguarde alguns minutos e tente novamente."), 429
 
         usuario = verificar_credenciais(email, senha)
         if not usuario:
             _registrar_falha(chave)
             logger.info("Falha de login para %s", (email or "").strip().lower())
             # Mensagem genérica: não revela se o e-mail existe.
-            return render_template("login.html", erro="Credenciais inválidas."), 401
+            return render_template("gav-login.html", erro="Credenciais inválidas."), 401
 
         _tentativas.pop(chave, None)
         session.clear()  # evita fixação de sessão: começa uma sessão limpa no login
@@ -219,7 +219,7 @@ def login():
         if not destino:
             session.clear()
             logger.warning("Usuário sem setor configurado: %s", usuario.get("email"))
-            return render_template("login.html", erro="Usuário sem setor configurado. Contate o administrador."), 403
+            return render_template("gav-login.html", erro="Usuário sem setor configurado. Contate o administrador."), 403
 
         resp = redirect(destino)
         # Conta de TV: emite o cookie de lembrança (re-login automático após reboot).
@@ -230,7 +230,7 @@ def login():
             )
         return resp
 
-    return render_template("login.html")
+    return render_template("gav-login.html")
 
 
 @auth_bp.route("/logout")
