@@ -54,12 +54,22 @@ function itemHtml(r) {
     <td data-rotulo="Nome">${escapeHtml(r.nome)}</td>
     <td data-rotulo="Situação">${situacao}</td>
     <td data-rotulo="Ações">
-      <div class="row-actions">
-        <label class="btn btn-sm btn-gerenciar foto-upload">
-          <span>${temFoto ? "Trocar" : "Enviar foto"}</span>
-          <input type="file" accept="image/jpeg,image/png,image/webp" hidden>
-        </label>
-        ${temFoto ? '<button type="button" class="btn btn-sm btn-danger foto-remover">Remover</button>' : ""}
+      <div class="row-menu">
+        <button type="button" class="btn btn-sm btn-gerenciar row-menu-toggle" aria-haspopup="true" aria-expanded="false">
+          <span>Ações</span>
+          <svg class="row-menu-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="row-menu-list" hidden>
+          <label class="row-menu-item foto-upload">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <span>${temFoto ? "Trocar foto" : "Enviar foto"}</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          </label>
+          ${temFoto ? `<button type="button" class="row-menu-item row-menu-danger foto-remover">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            <span>Remover foto</span>
+          </button>` : ""}
+        </div>
       </div>
     </td>
   </tr>`;
@@ -148,11 +158,38 @@ document.getElementById("fotos-lista").addEventListener("change", (e) => {
   enviar(item.dataset.id, input.files[0], item);
   input.value = "";
 });
+// Fecha todos os menus de ação abertos.
+function fecharMenusLinha() {
+  document.querySelectorAll("#fotos-lista .row-menu-list").forEach((l) => (l.hidden = true));
+  document.querySelectorAll("#fotos-lista .row-menu-toggle").forEach((t) => t.setAttribute("aria-expanded", "false"));
+}
+
+// Abre o menu de uma linha, posicionado FIXO a partir do botão (escapa o overflow:hidden do card).
+function abrirMenuLinha(toggle) {
+  const list = toggle.parentElement.querySelector(".row-menu-list");
+  const abrir = list.hidden;
+  fecharMenusLinha();
+  if (!abrir) return;
+  list.hidden = false;
+  const r = toggle.getBoundingClientRect();
+  list.style.top = `${Math.round(r.bottom + 6)}px`;
+  list.style.left = `${Math.round(Math.max(8, r.right - list.offsetWidth))}px`;
+  toggle.setAttribute("aria-expanded", "true");
+}
+
 document.getElementById("fotos-lista").addEventListener("click", (e) => {
+  const toggle = e.target.closest(".row-menu-toggle");
+  if (toggle) { abrirMenuLinha(toggle); return; }
   if (!e.target.closest(".foto-remover")) return;
   const item = e.target.closest(".foto-item");
+  fecharMenusLinha();
   remover(item.dataset.id, item);
 });
+
+// Fecha os menus ao clicar fora, rolar a página ou redimensionar.
+document.addEventListener("click", (e) => { if (!e.target.closest(".row-menu")) fecharMenusLinha(); });
+window.addEventListener("scroll", fecharMenusLinha, true);
+window.addEventListener("resize", fecharMenusLinha);
 // Popula o dropdown (checkboxes) com as equipes distintas dos responsaveis carregados.
 function popularEquipes() {
   const set = new Set();

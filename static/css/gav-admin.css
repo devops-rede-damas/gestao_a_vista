@@ -151,6 +151,31 @@
 .btn-gerenciar:hover { background: var(--bd-soft); border-color: var(--brand); color: var(--brand-dark); }
 .btn-gerenciar svg { width: 14px; height: 14px; }
 
+/* Menu de ações por linha (dropdown único "Ações"). A lista é position:fixed para
+   não ser cortada pelo overflow:hidden do card; o JS a posiciona a partir do botão. */
+.row-menu { position: relative; display: inline-flex; }
+.row-menu-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.row-menu-chevron { width: 14px; height: 14px; transition: transform .15s; }
+.row-menu-toggle[aria-expanded="true"] .row-menu-chevron { transform: rotate(180deg); }
+.row-menu-list {
+  position: fixed; z-index: 50; min-width: 190px;
+  background: #fff; border: 1px solid var(--bd); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15,23,42,.14); padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+/* display:flex acima venceria o atributo [hidden]; esta regra garante o esconder. */
+.row-menu-list[hidden] { display: none; }
+.row-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 12px; font: inherit; font-size: 13px; text-align: left;
+  color: var(--ink); background: transparent; border: 0; border-radius: 7px; cursor: pointer;
+}
+.row-menu-item:hover { background: var(--bd-soft); }
+.row-menu-item svg { width: 16px; height: 16px; color: var(--ink-4); flex-shrink: 0; }
+.row-menu-danger { color: var(--danger); }
+.row-menu-danger:hover { background: var(--danger-soft); }
+.row-menu-danger svg { color: var(--danger); }
+
 /* Toggle (Ativo/Inativo) no modal */
 .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
