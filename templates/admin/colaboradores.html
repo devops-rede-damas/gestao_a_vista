@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fotos dos responsáveis — Gestão à Vista</title>
+  <title>Colaboradores — Gestão à Vista</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -16,7 +16,7 @@
     <span class="admin-topbar-title">Gestão à Vista</span>
     <nav class="admin-nav">
       <a href="{{ url_for('admin.usuarios') }}" class="admin-nav-link{% if active == 'usuarios' %} active{% endif %}">Usuários</a>
-      <a href="{{ url_for('admin.fotos') }}" class="admin-nav-link{% if active == 'fotos' %} active{% endif %}">Fotos</a>
+      <a href="{{ url_for('admin.colaboradores') }}" class="admin-nav-link{% if active == 'colaboradores' %} active{% endif %}">Colaboradores</a>
     </nav>
     <span class="admin-topbar-spacer"></span>
     {% if session.usuario %}<span class="admin-topbar-user">{{ session.usuario.email }}</span>{% endif %}
@@ -29,7 +29,7 @@
         <div class="admin-titlebar">
           <h1 class="admin-title">Painel Admin</h1>
           <span class="admin-title-sep" aria-hidden="true">·</span>
-          <span class="admin-subtitle">Fotos dos responsáveis</span>
+          <span class="admin-subtitle">Colaboradores</span>
         </div>
         <p class="admin-desc">Envie ou troque a foto dos responsáveis exibidos no ranking do painel. Formatos: JPG, PNG ou WEBP — máx. 2 MB.</p>
       </div>
@@ -91,6 +91,6 @@
   <div class="toast-wrap" id="toast-wrap"></div>
 
   <script>window.SETORES = {{ setores | tojson }};</script>
-  <script src="{{ url_for('static', filename='js/admin-fotos.js') }}" type="module"></script>
+  <script src="{{ url_for('static', filename='js/admin-colaboradores.js') }}" type="module"></script>
 </body>
 </html>

@@ -75,12 +75,12 @@ def usuarios():
     )
 
 
-@admin_bp.route("/admin/fotos")
+@admin_bp.route("/admin/colaboradores")
 @papel_obrigatorio("ADM")
-def fotos():
-    """Tela de gestão das fotos (avatares) dos responsáveis pelos tickets."""
+def colaboradores():
+    """Tela de gestão dos colaboradores (fotos dos responsáveis pelos tickets)."""
     setores = [{"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()]
-    return render_template("admin/fotos.html", setores=setores, active="fotos")
+    return render_template("admin/colaboradores.html", setores=setores, active="colaboradores")
 
 
 # ── API (JSON) ─────────────────────────────────────────────────────────────────

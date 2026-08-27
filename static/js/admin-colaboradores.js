@@ -1,4 +1,4 @@
-/* Tela "Fotos dos responsáveis" (papel ADM) — comportamento.
+/* Tela "Colaboradores" (papel ADM) — comportamento.
  *
  * ES module VANILLA (sem jQuery/DataTables): lista os responsáveis com ticket
  * aberto e permite enviar/trocar/remover a foto. Reusa util.js (iniciais locais
