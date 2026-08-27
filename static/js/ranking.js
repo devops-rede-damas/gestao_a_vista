@@ -1,5 +1,5 @@
 // Widget "Tickets por Responsável": pódio (top 3) + carrossel do restante.
-import { escapeHtml, getFirstAndLastName, ehMobile, initialsAvatar } from "./util.js";
+import { escapeHtml, getFirstAndLastName, ehMobile, ehGestor, initialsAvatar } from "./util.js";
 import { currentTickets } from "./view.js";
 
 // Mapa de avatares por owner.id (imagens em static/avatars).
@@ -122,13 +122,40 @@ function renderCarouselTable() {
             <tbody>${rows}</tbody>
         </table>`;
 
-    if (carouselData.length > 10 && totalPages > 1 && !ehMobile()) {
-        html += `<div class="carousel-page">Página ${currentCarouselPage + 1} de ${totalPages}</div>`;
+    const mostraPager = carouselData.length > 10 && totalPages > 1 && !ehMobile();
+    const gestor = ehGestor();
+    if (mostraPager) {
+        html += gestor
+            ? `<div class="tickets-pager rank-pager">
+                   <button type="button" class="rank-page-btn" data-dir="prev" aria-label="Página anterior">&#8249;</button>
+                   <span class="tickets-pager-info">Página ${currentCarouselPage + 1} de ${totalPages}</span>
+                   <button type="button" class="rank-page-btn" data-dir="next" aria-label="Próxima página">&#8250;</button>
+               </div>`
+            : `<div class="carousel-page">Página ${currentCarouselPage + 1} de ${totalPages}</div>`;
     }
     container.innerHTML = html;
+
+    // Gestor no desktop: setas manuais que preservam a página e re-armam o rodízio (pausa).
+    if (mostraPager && gestor) {
+        container.querySelectorAll(".rank-page-btn").forEach(btn => {
+            btn.addEventListener("click", () => {
+                currentCarouselPage = btn.dataset.dir === "next"
+                    ? (currentCarouselPage + 1) % totalPages
+                    : (currentCarouselPage - 1 + totalPages) % totalPages;
+                renderCarouselTable();
+                armCarousel();
+            });
+        });
+    }
 }
 
 function startCarousel() {
+    currentCarouselPage = 0;
+    armCarousel();
+}
+
+// Arma o rodízio SEM resetar a página (usado também ao clicar nas setas = pausa/retoma).
+function armCarousel() {
     if (carouselInterval) clearTimeout(carouselInterval);
     if (ehMobile()) return; // mobile: lista completa com rolagem, sem rodízio
 
@@ -136,7 +163,6 @@ function startCarousel() {
     const totalPages = Math.ceil(remainingOwners.length / ITEMS_PER_PAGE);
     if (carouselData.length <= 10 || totalPages <= 1) return;
 
-    currentCarouselPage = 0;
     (function nextPage() {
         const interval = currentCarouselPage === 0 ? FIRST_PAGE_INTERVAL : OTHER_PAGES_INTERVAL;
         carouselInterval = setTimeout(() => {

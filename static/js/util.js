@@ -25,6 +25,13 @@ export function ehMobile() {
     return window.matchMedia("(max-width: 768px)").matches;
 }
 
+// True quando quem vê é um GESTOR logado (não a TV). A TV entra com conta 'tv'
+// (window.logado=false) e fica sempre automática, sem setas — por isso a decisão
+// de mostrar controles manuais ancora na CONTA, nunca no tamanho da tela.
+export function ehGestor() {
+    return !!window.logado;
+}
+
 // Gera um avatar de INICIAIS localmente (SVG data URI), sem depender de serviço
 // externo (privacidade + funciona sem internet). Usado como fallback de foto.
 // Contexto de <img>: o SVG NÃO executa scripts; ainda assim escapamos o texto.

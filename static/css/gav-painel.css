@@ -271,6 +271,19 @@ td.empty { text-align: center; color: var(--rd-text-dim); }
     .team-nav-btn.visible { display: inline-flex; }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONTROLES MANUAIS DO GESTOR NO DESKTOP (setas de página e de equipe)
+   Só valem quando o corpo tem .is-gestor (conta de gestor). A TV (conta 'tv')
+   NUNCA recebe essa classe, então permanece automática e SEM setas — intocada.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.is-gestor .tickets-pager { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 10px; }
+.is-gestor .tk-page-btn,
+.is-gestor .rank-page-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; font-size: 1.3rem; line-height: 1; color: #fff; background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; cursor: pointer; }
+.is-gestor .tk-page-btn:active,
+.is-gestor .rank-page-btn:active { transform: translateY(1px); }
+.is-gestor .tickets-pager-info { color: var(--rd-text-dim); font-weight: 600; }
+.is-gestor .team-nav-btn.visible { display: inline-flex; }
+
 /* Toast de aviso (redirect sem acesso) — só aparece para usuário logado.
    Canto superior direito, tom âmbar; some sozinho (ver script no gav-painel.html). */
 .toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 10px; transition: opacity .5s ease, transform .5s ease; }

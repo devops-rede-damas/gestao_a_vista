@@ -4,7 +4,7 @@ import { updateKPIs } from "./kpis.js";
 import { renderTicketsTable } from "./tickets.js";
 import { renderOwnerRank } from "./ranking.js";
 import { porEquipe, nextTeam, prevTeam, updateTeamBadge } from "./view.js";
-import { ehMobile } from "./util.js";
+import { ehMobile, ehGestor } from "./util.js";
 
 const TEAM_INTERVAL = 15000;
 let teamInterval = null;
@@ -94,14 +94,18 @@ function render() {
     updateLastUpdatedLabel();
 }
 
+// Marca o corpo como gestor: revela as setas manuais no desktop. A TV (conta 'tv')
+// não recebe a classe, então permanece sempre automática e sem setas.
+document.body.classList.toggle("is-gestor", ehGestor());
+
 // Render inicial com os tickets injetados pelo backend.
 lastUpdated = new Date();
 render();
 startTeamCarousel();
 
-// Setas de troca manual de equipe (aparecem só no mobile, modo por_equipe).
-document.getElementById("team-prev")?.addEventListener("click", () => { prevTeam(); render(); });
-document.getElementById("team-next")?.addEventListener("click", () => { nextTeam(); render(); });
+// Setas de troca manual de equipe (aparecem no mobile e, agora, no gestor no desktop).
+document.getElementById("team-prev")?.addEventListener("click", () => { prevTeam(); render(); startTeamCarousel(); });
+document.getElementById("team-next")?.addEventListener("click", () => { nextTeam(); render(); startTeamCarousel(); });
 
 // Ao cruzar o breakpoint mobile/desktop (ex.: girar o aparelho), re-renderiza e
 // reavalia os rodízios para o novo tamanho (mobile mostra tudo; TV/desktop roda).

@@ -1,5 +1,5 @@
 // Widget "Tickets Novos / Sem 1ª Resposta": lista paginada por criticidade de SLA.
-import { escapeHtml, ehMobile } from "./util.js";
+import { escapeHtml, ehMobile, ehGestor } from "./util.js";
 import { currentTickets } from "./view.js";
 
 // Classes de cor por status de SLA (definidas em static/css/gav-painel.css).
@@ -54,6 +54,7 @@ export function renderTicketsTable() {
     ).sort((a, b) => (SLA_PRIORITY[a.slaStatus] ?? 9) - (SLA_PRIORITY[b.slaStatus] ?? 9));
 
     const mobile = ehMobile();
+    const gestor = ehGestor();
     const perPage = mobile ? MOBILE_PER_PAGE : ticketsPerPage(container);
     const totalPages = Math.max(1, Math.ceil(tickets.length / perPage));
     if (currentTicketsPage >= totalPages) currentTicketsPage = 0;
@@ -68,7 +69,7 @@ export function renderTicketsTable() {
 
     let pager = "";
     if (totalPages > 1) {
-        pager = mobile
+        pager = (mobile || gestor)
             ? `<div class="tickets-pager">
                    <button type="button" class="tk-page-btn" data-dir="prev" aria-label="Página anterior">&#8249;</button>
                    <span class="tickets-pager-info">Página ${currentTicketsPage + 1} de ${totalPages}</span>
@@ -90,17 +91,20 @@ export function renderTicketsTable() {
         </div>
         ${pager}`;
 
-    // Celular: paginação MANUAL (setas), sem rodízio automático. TV/desktop: carrossel.
-    if (mobile) {
-        if (ticketsInterval) clearTimeout(ticketsInterval);
+    // Setas manuais: celular (sempre) e gestor no desktop. A TV nunca tem setas.
+    if (mobile || gestor) {
         container.querySelectorAll(".tk-page-btn").forEach(btn => {
             btn.addEventListener("click", () => {
                 currentTicketsPage = btn.dataset.dir === "next"
                     ? (currentTicketsPage + 1) % totalPages
                     : (currentTicketsPage - 1 + totalPages) % totalPages;
-                renderTicketsTable();
+                renderTicketsTable(); // re-renderiza e re-arma o rodízio = pausa ao clicar
             });
         });
+    }
+    // Rodízio automático: TV e gestor no desktop. Celular: manual puro (sem rodízio).
+    if (mobile) {
+        if (ticketsInterval) clearTimeout(ticketsInterval);
     } else {
         startTicketsCarousel(totalPages);
     }
