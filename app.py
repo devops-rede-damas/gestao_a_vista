@@ -12,6 +12,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, ses
 from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
 from core.avatars import carregar_catalogo
+from core.colaboradores import carregar_config as carregar_colaboradores
 from core.webauth import auth_bp, login_obrigatorio, redirecionar_sem_acesso, resolver_usuario, setor_autorizado
 from performance_api import performance_bp
 from admin_api import admin_bp
@@ -125,14 +126,26 @@ def _avatars_urls():
     return {oid: url_for("static", filename=f"avatars/{arquivo}") for oid, arquivo in carregar_catalogo().items()}
 
 
+def _filtrar_visiveis(tickets):
+    """Remove os tickets cujo dono foi marcado para NAO exibir no painel (admin).
+
+    A visibilidade vem da config por colaborador (core.colaboradores). Leitura tolerante:
+    banco fora -> sem ocultos -> todos aparecem (o painel nunca quebra por isto).
+    """
+    ocultos = {oid for oid, cfg in carregar_colaboradores().items() if not cfg.get("exibir", True)}
+    if not ocultos:
+        return tickets
+    return [t for t in tickets if str((t.get("owner") or {}).get("id") or "") not in ocultos]
+
+
 @app.route("/gv_movidesk")
 @login_obrigatorio
 def gv_movidesk():
     if not setor_autorizado("ti"):
         return redirecionar_sem_acesso("ti")
-    tickets = _fetch_tickets("ti")
+    tickets = _filtrar_visiveis(_fetch_tickets("ti") or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets or [], setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls())
+    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls())
 
 
 @app.route("/painel/<setor>")
@@ -142,9 +155,9 @@ def painel(setor):
         abort(404)
     if not setor_autorizado(setor):
         return redirecionar_sem_acesso(setor)
-    tickets = _fetch_tickets(setor)
+    tickets = _filtrar_visiveis(_fetch_tickets(setor) or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets or [], setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls())
+    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls())
 
 
 @app.route("/api/tickets")
@@ -159,7 +172,7 @@ def api_tickets():
     tickets = _fetch_tickets(setor)
     if tickets is None:
         return jsonify({"error": "Não foi possível consultar o Movidesk."}), 503
-    return jsonify(tickets)
+    return jsonify(_filtrar_visiveis(tickets))
 
 
 if __name__ == "__main__":

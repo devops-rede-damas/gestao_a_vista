@@ -175,6 +175,8 @@
 .row-menu-danger { color: var(--danger); }
 .row-menu-danger:hover { background: var(--danger-soft); }
 .row-menu-danger svg { color: var(--danger); }
+/* Linha de colaborador oculto do painel: esmaecida + chip "Oculto" na Situação. */
+.foto-item--oculto td { opacity: .55; }
 
 /* Toggle (Ativo/Inativo) no modal */
 .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }

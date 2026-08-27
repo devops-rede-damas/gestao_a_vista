@@ -18,6 +18,7 @@ from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
 from core.auth import hash_senha
 from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
+from core.colaboradores import ColaboradorConfigError, carregar_config as carregar_colaboradores, config_de, definir_exibir
 from core.sectors import available_sectors, load_config, sector_display, setores_de
 from core.usuarios import (
     atualizar_usuario,
@@ -243,6 +244,7 @@ def api_responsaveis():
         return jsonify({"erro": "Não foi possível consultar o Movidesk."}), 503
     itens = listar_responsaveis(tickets)
     cfg = load_config()
+    colab = carregar_colaboradores()
     for item in itens:
         nome = item.get("nome")
         setores = set()
@@ -250,7 +252,23 @@ def api_responsaveis():
             setores.update(setores_de(equipe, nome, cfg))
         item["setores"] = sorted(setores)
         item["foto_url"] = _foto_url(item.get("arquivo"))
+        conf = config_de(item.get("id"), colab)
+        item["exibir"] = conf["exibir"]
+        item["nome_exibicao"] = conf["nome_exibicao"]
     return jsonify(itens)
+
+
+@admin_bp.route("/admin/api/responsaveis/<owner_id>/exibir", methods=["PUT"])
+@papel_obrigatorio("ADM")
+def api_exibir(owner_id):
+    """Define se o colaborador aparece nos painéis (exibir=true/false)."""
+    dados = request.get_json(silent=True) or {}
+    try:
+        conf = definir_exibir(owner_id, bool(dados.get("exibir")))
+    except ColaboradorConfigError as exc:
+        logger.warning("Falha ao definir exibir de %s: %s", owner_id, exc)
+        return jsonify({"erro": "Não foi possível salvar."}), 503
+    return jsonify(conf)
 
 
 @admin_bp.route("/admin/api/responsaveis/<owner_id>/foto", methods=["POST"])
