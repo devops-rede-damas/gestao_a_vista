@@ -6,6 +6,7 @@ Flask, HTTP ou o Movidesk. Assim permanece desacoplado e fácil de testar.
 """
 import json
 import os
+import unicodedata
 
 _CONFIG_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "config", "setores.json")
 
@@ -56,6 +57,12 @@ def sector_display(setor, cfg=None):
 def _escape(value):
     """Escapa aspas simples para literais OData (' -> '')."""
     return str(value).replace("'", "''")
+
+
+def _normalizar(texto):
+    """Minúsculas sem acento — reproduz o contains() do Movidesk (insensível a acento/caixa)."""
+    decomposto = unicodedata.normalize("NFKD", str(texto))
+    return "".join(c for c in decomposto if not unicodedata.combining(c)).casefold()
 
 
 def _rule_clause(rule):
@@ -134,3 +141,47 @@ def build_day_filter(setor, desde, cfg=None):
     janela = " or ".join(f"{campo} ge {desde}" for campo in _DAY_ACTIVITY_FIELDS)
     partes.append(f"({janela})")
     return " and ".join(partes)
+
+
+def _regra_casa(rule, owner_team, owner_name):
+    """Caminho INVERSO de _rule_clause: uma equipe (e opcionalmente o dono) casa esta regra?
+
+    Espelha a mesma semântica do filtro enviado ao Movidesk: 'equipe' é match exato,
+    'contem' é substring insensível a acento/caixa e 'responsaveis' restringe a regra
+    às pessoas nomeadas (comparando pelo nome do dono). Assim a associação equipe->setor
+    fica fiel ao build_filter, que é o que o painel usa.
+    """
+    if rule.get("equipe"):
+        if owner_team != rule["equipe"]:
+            return False
+    elif rule.get("contem"):
+        if _normalizar(rule["contem"]) not in _normalizar(owner_team):
+            return False
+    else:
+        raise SectorConfigError("Cada item de 'regras' precisa de 'equipe' ou 'contem'.")
+    responsaveis = rule.get("responsaveis") or []
+    if responsaveis:
+        alvo = (owner_name or "").strip()
+        return bool(alvo) and any(alvo == str(p).strip() for p in responsaveis)
+    return True
+
+
+def setores_de(owner_team, owner_name=None, cfg=None):
+    """Associação INVERSA equipe->setor: a que setor(es) uma equipe/dono pertence.
+
+    Recebe a equipe do ticket (ownerTeam) e, opcionalmente, o nome do responsável
+    (necessário só para as regras com 'responsaveis'). Devolve a lista de chaves de
+    setor cujas regras casam — pode ser 0, 1 ou N (uma equipe/pessoa pode servir a
+    mais de um setor). Lê a MESMA config do build_filter, então o resultado é fiel
+    ao recorte do painel.
+    """
+    cfg = cfg or load_config()
+    if not owner_team:
+        return []
+    achados = []
+    for setor in _sector_keys(cfg):
+        regras = cfg["setores"][setor].get("regras") or []
+        if any(_regra_casa(r, owner_team, owner_name) for r in regras):
+            achados.append(setor)
+    return achados
+

@@ -46,6 +46,16 @@
           </div>
         </div>
         <div class="filter-field">
+          <label>Setor</label>
+          <div class="multi" id="f-setor">
+            <button type="button" class="multi-toggle" id="f-setor-toggle" aria-haspopup="true" aria-expanded="false">
+              <span class="multi-label">Todos os setores</span>
+              <svg class="multi-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <div class="multi-menu" id="f-setor-menu" hidden></div>
+          </div>
+        </div>
+        <div class="filter-field">
           <label>Equipe</label>
           <div class="multi" id="f-equipe">
             <button type="button" class="multi-toggle" id="f-equipe-toggle" aria-haspopup="true" aria-expanded="false">
@@ -80,6 +90,7 @@
 
   <div class="toast-wrap" id="toast-wrap"></div>
 
+  <script>window.SETORES = {{ setores | tojson }};</script>
   <script src="{{ url_for('static', filename='js/admin-fotos.js') }}" type="module"></script>
 </body>
 </html>

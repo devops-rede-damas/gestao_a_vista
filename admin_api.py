@@ -18,7 +18,7 @@ from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
 from core.auth import hash_senha
 from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
-from core.sectors import available_sectors, sector_display
+from core.sectors import available_sectors, load_config, sector_display, setores_de
 from core.usuarios import (
     atualizar_usuario,
     buscar_por_email,
@@ -79,7 +79,8 @@ def usuarios():
 @papel_obrigatorio("ADM")
 def fotos():
     """Tela de gestão das fotos (avatares) dos responsáveis pelos tickets."""
-    return render_template("admin/fotos.html", active="fotos")
+    setores = [{"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()]
+    return render_template("admin/fotos.html", setores=setores, active="fotos")
 
 
 # ── API (JSON) ─────────────────────────────────────────────────────────────────
@@ -241,7 +242,13 @@ def api_responsaveis():
         logger.warning("Falha ao listar responsáveis: %s", exc)
         return jsonify({"erro": "Não foi possível consultar o Movidesk."}), 503
     itens = listar_responsaveis(tickets)
+    cfg = load_config()
     for item in itens:
+        nome = item.get("nome")
+        setores = set()
+        for equipe in item.get("equipes") or []:
+            setores.update(setores_de(equipe, nome, cfg))
+        item["setores"] = sorted(setores)
         item["foto_url"] = _foto_url(item.get("arquivo"))
     return jsonify(itens)
 

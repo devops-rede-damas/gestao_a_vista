@@ -15,6 +15,9 @@ const TIPOS_OK = ["image/jpeg", "image/png", "image/webp"];
 
 let responsaveis = [];
 const equipesSel = new Set(); // equipes marcadas no filtro (multi-selecao)
+const setoresSel = new Set(); // setores marcados no filtro (multi-selecao)
+const nomeSetor = {};         // chave -> nome amigavel do setor (vem do template)
+(window.SETORES || []).forEach((s) => { nomeSetor[s.chave] = s.nome; });
 
 // Icones SVG estaticos (conteudo fixo, nao vem do usuario -> seguro em innerHTML).
 const TOAST_ICONES = {
@@ -66,6 +69,7 @@ function render() {
   const termo = (document.getElementById("f-busca").value || "").trim().toLowerCase();
   let filtrados = responsaveis;
   if (termo) filtrados = filtrados.filter((r) => (r.nome || "").toLowerCase().includes(termo));
+  if (setoresSel.size) filtrados = filtrados.filter((r) => (r.setores || []).some((s) => setoresSel.has(s)));
   if (equipesSel.size) filtrados = filtrados.filter((r) => (r.equipes || []).some((e) => equipesSel.has(e)));
   document.getElementById("fotos-lista").innerHTML =
     filtrados.map(itemHtml).join("") || '<tr><td colspan="4" class="foto-vazio">Nenhum responsável encontrado.</td></tr>';
@@ -73,7 +77,7 @@ function render() {
   document.getElementById("fotos-count").textContent = filtrados.length === total
     ? total + (total === 1 ? " responsável" : " responsáveis")
     : filtrados.length + " de " + total + " responsáveis";
-  document.getElementById("btn-limpar").hidden = !(termo || equipesSel.size);
+  document.getElementById("btn-limpar").hidden = !(termo || equipesSel.size || setoresSel.size);
 }
 
 async function carregar() {
@@ -84,6 +88,7 @@ async function carregar() {
     if (!resp.ok) throw new Error("Falha ao carregar");
     responsaveis = await resp.json();
     popularEquipes();
+    popularSetores();
     render();
   } catch (e) {
     lista.innerHTML = '<tr><td colspan="4" class="foto-vazio">Não foi possível carregar os responsáveis.</td></tr>';
@@ -166,6 +171,25 @@ function atualizarLabelEquipe() {
     n ? `${n} equipe${n > 1 ? "s" : ""}` : "Todas as equipes";
 }
 
+// Popula o dropdown de setores com os setores DISTINTOS presentes nos dados (nome amigavel).
+function popularSetores() {
+  const set = new Set();
+  responsaveis.forEach((r) => (r.setores || []).forEach((s) => set.add(s)));
+  const chaves = [...set].sort((a, b) => (nomeSetor[a] || a).localeCompare(nomeSetor[b] || b));
+  document.getElementById("f-setor-menu").innerHTML = chaves.map((s) => `
+    <label class="multi-option" title="${escapeHtml(nomeSetor[s] || s)}">
+      <input type="checkbox" value="${escapeHtml(s)}"${setoresSel.has(s) ? " checked" : ""}>
+      <span>${escapeHtml(nomeSetor[s] || s)}</span>
+    </label>`).join("");
+  atualizarLabelSetor();
+}
+
+function atualizarLabelSetor() {
+  const n = setoresSel.size;
+  document.querySelector("#f-setor .multi-label").textContent =
+    n ? `${n} setor${n > 1 ? "es" : ""}` : "Todos os setores";
+}
+
 document.getElementById("f-busca").addEventListener("input", render);
 
 // Multi-select de equipe: abre/fecha, marca checkboxes, fecha ao clicar fora.
@@ -192,12 +216,39 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// Multi-select de setor: mesma mecanica do de equipe.
+const multiSetor = document.getElementById("f-setor");
+const toggleSetor = document.getElementById("f-setor-toggle");
+const menuSetor = document.getElementById("f-setor-menu");
+toggleSetor.addEventListener("click", (e) => {
+  e.stopPropagation();
+  const abrir = menuSetor.hidden;
+  menuSetor.hidden = !abrir;
+  toggleSetor.setAttribute("aria-expanded", String(abrir));
+});
+menuSetor.addEventListener("change", (e) => {
+  const cb = e.target.closest("input[type=checkbox]");
+  if (!cb) return;
+  if (cb.checked) setoresSel.add(cb.value); else setoresSel.delete(cb.value);
+  atualizarLabelSetor();
+  render();
+});
+document.addEventListener("click", (e) => {
+  if (!multiSetor.contains(e.target)) {
+    menuSetor.hidden = true;
+    toggleSetor.setAttribute("aria-expanded", "false");
+  }
+});
+
 // Limpa busca + equipes selecionadas (aparece so quando ha filtro ativo).
 document.getElementById("btn-limpar").addEventListener("click", () => {
   document.getElementById("f-busca").value = "";
   equipesSel.clear();
   menuEquipe.querySelectorAll("input[type=checkbox]").forEach((cb) => (cb.checked = false));
   atualizarLabelEquipe();
+  setoresSel.clear();
+  menuSetor.querySelectorAll("input[type=checkbox]").forEach((cb) => (cb.checked = false));
+  atualizarLabelSetor();
   render();
 });
 
