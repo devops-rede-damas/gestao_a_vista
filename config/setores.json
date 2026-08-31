@@ -55,7 +55,7 @@
       "nome": "Financeiro",
       "regras": [
         { "contem": "CSC Financeiro" },
-        { "contem": "CSC Tesouraria" },
+        { "equipe": "Atendimento CSC Tesouraria" },
         { "equipe": "Atendimento CSC Cobrança" },
         { "equipe": "Atendimento Financeiro PAS" }
       ]
