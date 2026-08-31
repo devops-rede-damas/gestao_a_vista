@@ -151,6 +151,35 @@
 .btn-gerenciar:hover { background: var(--bd-soft); border-color: var(--brand); color: var(--brand-dark); }
 .btn-gerenciar svg { width: 14px; height: 14px; }
 
+/* Menu de ações por linha (dropdown único "Ações"). A lista é position:fixed para
+   não ser cortada pelo overflow:hidden do card; o JS a posiciona a partir do botão. */
+.row-menu { position: relative; display: inline-flex; }
+.row-menu-toggle { display: inline-flex; align-items: center; gap: 6px; }
+.row-menu-chevron { width: 14px; height: 14px; transition: transform .15s; }
+.row-menu-toggle[aria-expanded="true"] .row-menu-chevron { transform: rotate(180deg); }
+.row-menu-list {
+  position: fixed; z-index: 50; min-width: 190px;
+  background: #fff; border: 1px solid var(--bd); border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15,23,42,.14); padding: 6px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+/* display:flex acima venceria o atributo [hidden]; esta regra garante o esconder. */
+.row-menu-list[hidden] { display: none; }
+.row-menu-item {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 9px 12px; font: inherit; font-size: 13px; text-align: left;
+  color: var(--ink); background: transparent; border: 0; border-radius: 7px; cursor: pointer;
+}
+.row-menu-item:hover { background: var(--bd-soft); }
+.row-menu-item svg { width: 16px; height: 16px; color: var(--ink-4); flex-shrink: 0; }
+.row-menu-danger { color: var(--danger); }
+.row-menu-danger:hover { background: var(--danger-soft); }
+.row-menu-danger svg { color: var(--danger); }
+/* Linha de colaborador oculto do painel: esmaecida (a Visibilidade e a Ações
+   ficam de fora — opacity no ancestral vazaria para o menu position:fixed filho,
+   deixando o dropdown transparente; e o switch precisa continuar legível). */
+.foto-item--oculto td:not([data-rotulo="Ações"]):not([data-rotulo="Visibilidade"]) { opacity: .55; }
+
 /* Toggle (Ativo/Inativo) no modal */
 .switch { display: inline-flex; align-items: center; gap: 10px; cursor: pointer; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
@@ -388,6 +417,10 @@
 .chip-neutro { background: var(--bd-soft); color: var(--ink-3); }
 .foto-upload { cursor: pointer; }
 .foto-vazio { padding: 22px 8px; color: var(--ink-4); text-align: center; }
+/* Nome real + "apelido" de exibicao (subtitulo discreto) e o traço de "sem foto". */
+.foto-nome { font-weight: 500; }
+.foto-alias { display: block; margin-top: 2px; font-size: 12px; color: var(--ink-4); }
+.foto-sem { color: var(--ink-4); }
 
 /* Multi-select (dropdown com checkboxes) — filtro de equipe */
 .multi { position: relative; }
@@ -422,9 +455,10 @@
 }
 
 /* Larguras enxutas das colunas (desktop): Nome ocupa o resto */
-.admin-page .admin-table--fotos thead th:nth-child(1) { width: 64px; }
-.admin-page .admin-table--fotos thead th:nth-child(3) { width: 140px; }
-.admin-page .admin-table--fotos thead th:nth-child(4) { width: 200px; }
+.admin-page .admin-table--fotos thead th:nth-child(1) { width: 64px; }   /* Foto */
+.admin-page .admin-table--fotos thead th:nth-child(3) { width: 120px; }  /* Situação */
+.admin-page .admin-table--fotos thead th:nth-child(4) { width: 150px; }  /* Visibilidade */
+.admin-page .admin-table--fotos thead th:nth-child(5) { width: 180px; }  /* Ações */
 
 /* Zebra (linhas alternadas) — so no desktop; hover continua vencendo */
 @media (min-width: 769px) {
@@ -435,13 +469,15 @@
 /* Fotos no mobile: cartao compacto de 3 linhas (Nome / Foto+Situacao / Acoes),
    economizando uma linha. Escopado em .admin-table--fotos p/ nao afetar Usuarios. */
 @media (max-width: 768px) {
-  .admin-page .admin-table--fotos tbody tr { display: flex; flex-wrap: wrap; }
-  .admin-page .admin-table--fotos tbody td[data-rotulo="Nome"]     { order: 1; flex: 1 1 100%; }
-  .admin-page .admin-table--fotos tbody td[data-rotulo="Foto"]     { order: 2; flex: 0 0 auto; width: auto !important; justify-content: flex-start; }
-  .admin-page .admin-table--fotos tbody td[data-rotulo="Situação"] { order: 3; flex: 1 1 auto; width: auto !important; justify-content: flex-end; }
-  .admin-page .admin-table--fotos tbody td[data-rotulo="Ações"]    { order: 4; flex: 1 1 100%; }
+  .admin-page .admin-table--fotos tbody tr { display: flex; flex-wrap: wrap; align-items: center; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Nome"]         { order: 1; flex: 1 1 100%; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Foto"]         { order: 2; flex: 0 0 auto; width: auto !important; justify-content: flex-start; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Situação"]     { order: 3; flex: 0 0 auto; width: auto !important; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Visibilidade"] { order: 4; flex: 1 1 auto; width: auto !important; justify-content: flex-end; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Ações"]        { order: 5; flex: 1 1 100%; }
   .admin-page .admin-table--fotos tbody td[data-rotulo="Foto"]::before,
-  .admin-page .admin-table--fotos tbody td[data-rotulo="Situação"]::before { content: none; }
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Situação"]::before,
+  .admin-page .admin-table--fotos tbody td[data-rotulo="Visibilidade"]::before { content: none; }
 }
 /* ── Celular pequeno: enxuga a topbar e o modal ────────────────── */
 @media (max-width: 480px) {

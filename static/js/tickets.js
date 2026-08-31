@@ -28,8 +28,11 @@ function ticketsPerPage(container) {
 }
 
 function ticketRowHtml(t, mobile) {
+    const ownerId = t.owner && t.owner.id ? String(t.owner.id) : "";
+    const custom = (window.nomesExibicao || {})[ownerId];
     const ownerFull = (t.owner && t.owner.businessName) || "-";
-    const owner = mobile ? ownerFull.split(" ")[0] : ownerFull; // celular: só o primeiro nome
+    // Nome personalizado do admin aparece LITERAL (mesmo no celular); senão, celular só o 1º nome.
+    const owner = custom || (mobile ? ownerFull.split(" ")[0] : ownerFull);
     const respondido = !!t.slaRealResponseDate;
     const slaTexto = respondido ? "Realizada" : (t.slaResponseDateFmt || "-");
     const status = t.slaStatus || "";

@@ -40,6 +40,12 @@ function avatarUrlFor(ownerId, name) {
     return initialsAvatar(name);                             // iniciais geradas localmente (sem servico externo)
 }
 
+// Nome exibido: usa o personalizado do admin (LITERAL) ou cai no 1º+último nome.
+function nomeExibido(ownerId, owner) {
+    const custom = (window.nomesExibicao || {})[ownerId];
+    return custom || getFirstAndLastName(owner);
+}
+
 // Fallback quando o arquivo de avatar nao carrega (ex.: sumiu): iniciais locais.
 function avatarOnError(name) {
     const uri = initialsAvatar(name).replace(/'/g, "\\'");
@@ -52,7 +58,7 @@ export function renderOwnerRank() {
     tickets.forEach(t => {
         const ownerId = t.owner && t.owner.id ? t.owner.id : "sem_responsavel";
         if (!owners[ownerId]) {
-            owners[ownerId] = { count: 0, name: getFirstAndLastName(t.owner) };
+            owners[ownerId] = { count: 0, name: nomeExibido(ownerId, t.owner) };
         }
         owners[ownerId].count++;
     });
