@@ -17,7 +17,7 @@
     <span class="admin-topbar-title">Gestão à Vista</span>
     <nav class="admin-nav">
       <a href="{{ url_for('admin.usuarios') }}" class="admin-nav-link{% if active == 'usuarios' %} active{% endif %}">Usuários</a>
-      <a href="{{ url_for('admin.fotos') }}" class="admin-nav-link{% if active == 'fotos' %} active{% endif %}">Fotos</a>
+      <a href="{{ url_for('admin.colaboradores') }}" class="admin-nav-link{% if active == 'colaboradores' %} active{% endif %}">Colaboradores</a>
     </nav>
     <span class="admin-topbar-spacer"></span>
     {% if session.usuario %}<span class="admin-topbar-user">{{ session.usuario.email }}</span>{% endif %}
