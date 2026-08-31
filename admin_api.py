@@ -18,7 +18,13 @@ from flask import Blueprint, abort, jsonify, render_template, request, url_for
 
 from core.auth import hash_senha
 from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
-from core.colaboradores import ColaboradorConfigError, carregar_config as carregar_colaboradores, config_de, definir_exibir
+from core.colaboradores import (
+    ColaboradorConfigError,
+    carregar_config as carregar_colaboradores,
+    config_de,
+    definir_exibir,
+    definir_nome_exibicao,
+)
 from core.sectors import available_sectors, load_config, sector_display, setores_de
 from core.usuarios import (
     atualizar_usuario,
@@ -267,6 +273,19 @@ def api_exibir(owner_id):
         conf = definir_exibir(owner_id, bool(dados.get("exibir")))
     except ColaboradorConfigError as exc:
         logger.warning("Falha ao definir exibir de %s: %s", owner_id, exc)
+        return jsonify({"erro": "Não foi possível salvar."}), 503
+    return jsonify(conf)
+
+
+@admin_bp.route("/admin/api/responsaveis/<owner_id>/nome", methods=["PUT"])
+@papel_obrigatorio("ADM")
+def api_nome(owner_id):
+    """Define o nome de exibição do colaborador nos painéis (vazio volta ao padrão)."""
+    dados = request.get_json(silent=True) or {}
+    try:
+        conf = definir_nome_exibicao(owner_id, dados.get("nome"))
+    except ColaboradorConfigError as exc:
+        logger.warning("Falha ao definir nome de %s: %s", owner_id, exc)
         return jsonify({"erro": "Não foi possível salvar."}), 503
     return jsonify(conf)
 

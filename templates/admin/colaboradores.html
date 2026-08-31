@@ -80,11 +80,38 @@
       <table class="admin-table admin-table--fotos" style="width:100%">
         <thead>
           <tr>
-            <th>Foto</th><th>Nome</th><th>Situação</th><th>Ações</th>
+            <th>Foto</th><th>Nome</th><th>Situação</th><th>Visibilidade</th><th>Ações</th>
           </tr>
         </thead>
         <tbody id="fotos-lista"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- ═══ Modal: nome de exibição ═══ -->
+  <div class="modal-backdrop" id="modal-nome">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-nome-titulo">
+      <div class="modal-hd">
+        <h2 id="modal-nome-titulo">Nome de exibição</h2>
+        <button type="button" class="modal-close" data-fechar>&times;</button>
+      </div>
+      <form id="form-nome">
+        <div class="modal-body">
+          <input type="hidden" id="n-id">
+          <div class="modal-field">
+            <label for="n-nome">Nome exibido no painel</label>
+            <div class="input-icon">
+              <svg class="input-icon-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              <input type="text" id="n-nome" autocomplete="off" maxlength="255" placeholder="Ex.: Núcleo de Atendimento">
+            </div>
+            <span class="hint">Deixe em branco para voltar ao nome padrão (primeiro e último nome do Movidesk).</span>
+          </div>
+        </div>
+        <div class="modal-ft">
+          <button type="button" class="btn" data-fechar>Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-salvar-nome">Salvar</button>
+        </div>
+      </form>
     </div>
   </div>
 

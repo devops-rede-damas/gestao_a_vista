@@ -48,13 +48,22 @@ function itemHtml(r) {
   const oculto = r.exibir === false;
   const situacao = temFoto
     ? '<span class="chip chip-ativo">Com foto</span>'
-    : '<span class="chip chip-neutro">Sem foto</span>';
-  const marcaOculto = oculto ? ' <span class="chip chip-inativo">Oculto</span>' : "";
+    : '<span class="foto-sem" title="Sem foto">—</span>';
+  const alias = r.nome_exibicao
+    ? '<span class="foto-alias">Exibe: ' + escapeHtml(r.nome_exibicao) + "</span>"
+    : "";
   return `<tr class="foto-item${oculto ? " foto-item--oculto" : ""}" data-id="${escapeHtml(r.id)}">
     <td data-rotulo="Foto"><img class="foto-mini" src="${escapeHtml(avatarSrc(r))}" alt=""
          onerror="this.onerror=null;this.src='${escapeHtml(initialsAvatar(r.nome))}'"></td>
-    <td data-rotulo="Nome">${escapeHtml(r.nome)}</td>
-    <td data-rotulo="Situação">${situacao}${marcaOculto}</td>
+    <td data-rotulo="Nome"><span class="foto-nome">${escapeHtml(r.nome)}</span>${alias}</td>
+    <td data-rotulo="Situação">${situacao}</td>
+    <td data-rotulo="Visibilidade">
+      <label class="switch">
+        <input type="checkbox" class="vis-toggle"${oculto ? "" : " checked"}>
+        <span class="switch-track"></span>
+        <span class="switch-label">${oculto ? "Oculto" : "Visível"}</span>
+      </label>
+    </td>
     <td data-rotulo="Ações">
       <div class="row-menu">
         <button type="button" class="btn btn-sm btn-gerenciar row-menu-toggle" aria-haspopup="true" aria-expanded="false">
@@ -71,11 +80,9 @@ function itemHtml(r) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             <span>Remover foto</span>
           </button>` : ""}
-          <button type="button" class="row-menu-item row-menu-exibir">
-            ${oculto
-              ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'
-              : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'}
-            <span>${oculto ? "Exibir no painel" : "Ocultar do painel"}</span>
+          <button type="button" class="row-menu-item row-menu-nome">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>
+            <span>Nome de exibição</span>
           </button>
         </div>
       </div>
@@ -90,7 +97,7 @@ function render() {
   if (setoresSel.size) filtrados = filtrados.filter((r) => (r.setores || []).some((s) => setoresSel.has(s)));
   if (equipesSel.size) filtrados = filtrados.filter((r) => (r.equipes || []).some((e) => equipesSel.has(e)));
   document.getElementById("fotos-lista").innerHTML =
-    filtrados.map(itemHtml).join("") || '<tr><td colspan="4" class="foto-vazio">Nenhum responsável encontrado.</td></tr>';
+    filtrados.map(itemHtml).join("") || '<tr><td colspan="5" class="foto-vazio">Nenhum responsável encontrado.</td></tr>';
   const total = responsaveis.length;
   document.getElementById("fotos-count").textContent = filtrados.length === total
     ? total + (total === 1 ? " responsável" : " responsáveis")
@@ -100,7 +107,7 @@ function render() {
 
 async function carregar() {
   const lista = document.getElementById("fotos-lista");
-  lista.innerHTML = '<tr><td colspan="4" class="foto-vazio">Carregando…</td></tr>';
+  lista.innerHTML = '<tr><td colspan="5" class="foto-vazio">Carregando…</td></tr>';
   try {
     const resp = await fetch(API);
     if (!resp.ok) throw new Error("Falha ao carregar");
@@ -109,7 +116,7 @@ async function carregar() {
     popularSetores();
     render();
   } catch (e) {
-    lista.innerHTML = '<tr><td colspan="4" class="foto-vazio">Não foi possível carregar os responsáveis.</td></tr>';
+    lista.innerHTML = '<tr><td colspan="5" class="foto-vazio">Não foi possível carregar os responsáveis.</td></tr>';
     toast("Não foi possível carregar a lista.", "erro");
   }
 }
@@ -158,29 +165,34 @@ async function remover(id, item) {
   }
 }
 
-async function alternarExibir(id, item) {
-  const r = responsaveis.find((x) => x.id === id);
-  const novo = r ? r.exibir === false : true; // oculto -> exibir; visível -> ocultar
+async function definirVisivel(id, visivel, item) {
   setBusy(item, true);
   try {
     const resp = await fetch(`${API}/${encodeURIComponent(id)}/exibir`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ exibir: novo }),
+      body: JSON.stringify({ exibir: visivel }),
     });
     const dados = await resp.json().catch(() => ({}));
     if (!resp.ok) throw new Error(dados.erro || "Erro ao salvar");
+    const r = responsaveis.find((x) => x.id === id);
     if (r) r.exibir = dados.exibir;
     render();
     toast(dados.exibir ? "Colaborador exibido no painel." : "Colaborador ocultado do painel.", "ok");
   } catch (e) {
     toast(e.message, "erro", "Não foi possível salvar");
-    setBusy(item, false);
+    render(); // reverte o switch para o estado real
   }
 }
 
 // Delegação de eventos (a lista é re-renderizada a cada ação).
 document.getElementById("fotos-lista").addEventListener("change", (e) => {
+  const vis = e.target.closest(".vis-toggle");
+  if (vis) {
+    const item = e.target.closest(".foto-item");
+    definirVisivel(item.dataset.id, vis.checked, item);
+    return;
+  }
   const input = e.target.closest("input[type=file]");
   if (!input || !input.files || !input.files[0]) return;
   const item = e.target.closest(".foto-item");
@@ -209,11 +221,11 @@ function abrirMenuLinha(toggle) {
 document.getElementById("fotos-lista").addEventListener("click", (e) => {
   const toggle = e.target.closest(".row-menu-toggle");
   if (toggle) { abrirMenuLinha(toggle); return; }
-  const exibirBtn = e.target.closest(".row-menu-exibir");
-  if (exibirBtn) {
+  const nomeBtn = e.target.closest(".row-menu-nome");
+  if (nomeBtn) {
     const item = e.target.closest(".foto-item");
     fecharMenusLinha();
-    alternarExibir(item.dataset.id, item);
+    abrirModalNome(item.dataset.id);
     return;
   }
   if (!e.target.closest(".foto-remover")) return;
@@ -323,6 +335,57 @@ document.getElementById("btn-limpar").addEventListener("click", () => {
   menuSetor.querySelectorAll("input[type=checkbox]").forEach((cb) => (cb.checked = false));
   atualizarLabelSetor();
   render();
+});
+
+// Modal de nome de exibicao: abre com o valor atual, salva via PUT (vazio volta ao padrao).
+const modalNome = document.getElementById("modal-nome");
+const formNome = document.getElementById("form-nome");
+const inputNome = document.getElementById("n-nome");
+const inputNomeId = document.getElementById("n-id");
+const btnSalvarNome = document.getElementById("btn-salvar-nome");
+
+function abrirModalNome(id) {
+  const r = responsaveis.find((x) => x.id === id);
+  inputNomeId.value = id;
+  inputNome.value = (r && r.nome_exibicao) || "";
+  modalNome.classList.add("open");
+  setTimeout(() => inputNome.focus(), 30);
+}
+
+function fecharModalNome() {
+  modalNome.classList.remove("open");
+}
+
+modalNome.addEventListener("click", (e) => {
+  if (e.target === modalNome || e.target.closest("[data-fechar]")) fecharModalNome();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && modalNome.classList.contains("open")) fecharModalNome();
+});
+
+formNome.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const id = inputNomeId.value;
+  const nome = inputNome.value.trim();
+  btnSalvarNome.disabled = true;
+  try {
+    const resp = await fetch(`${API}/${encodeURIComponent(id)}/nome`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ nome }),
+    });
+    const dados = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(dados.erro || "Erro ao salvar");
+    const r = responsaveis.find((x) => x.id === id);
+    if (r) r.nome_exibicao = dados.nome_exibicao;
+    render();
+    fecharModalNome();
+    toast(dados.nome_exibicao ? "Nome de exibição salvo." : "Nome de exibição removido.", "ok");
+  } catch (err) {
+    toast(err.message, "erro", "Não foi possível salvar");
+  } finally {
+    btnSalvarNome.disabled = false;
+  }
 });
 
 carregar();

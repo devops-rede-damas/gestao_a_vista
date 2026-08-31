@@ -126,6 +126,15 @@ def _avatars_urls():
     return {oid: url_for("static", filename=f"avatars/{arquivo}") for oid, arquivo in carregar_catalogo().items()}
 
 
+def _nomes_exibicao():
+    """Mapa owner.id -> nome de exibicao personalizado (so quem tem). {} se banco fora."""
+    return {
+        oid: cfg["nome_exibicao"]
+        for oid, cfg in carregar_colaboradores().items()
+        if cfg.get("nome_exibicao")
+    }
+
+
 def _filtrar_visiveis(tickets):
     """Remove os tickets cujo dono foi marcado para NAO exibir no painel (admin).
 
@@ -145,7 +154,7 @@ def gv_movidesk():
         return redirecionar_sem_acesso("ti")
     tickets = _filtrar_visiveis(_fetch_tickets("ti") or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls())
+    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao())
 
 
 @app.route("/painel/<setor>")
@@ -157,7 +166,7 @@ def painel(setor):
         return redirecionar_sem_acesso(setor)
     tickets = _filtrar_visiveis(_fetch_tickets(setor) or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls())
+    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao())
 
 
 @app.route("/api/tickets")

@@ -89,6 +89,7 @@
         window.setor = {{ setor | tojson | safe }};
         window.exibicao = {{ exibicao | tojson | safe }};
         window.avatars = {{ (avatars or {}) | tojson | safe }};
+        window.nomesExibicao = {{ (nomes or {}) | tojson | safe }};
         // Gestor vê setas manuais; a TV (conta 'tv') fica sempre automática, sem setas.
         window.logado = {{ logado | tojson | safe }};
     </script>
