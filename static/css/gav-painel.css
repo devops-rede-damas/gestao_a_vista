@@ -110,6 +110,17 @@ body {
 /* Setor: chip discreto (secundario ao nome do projeto, nunca maior que ele) */
 .panel-dept { font-size: 1.3rem; font-weight: 700; color: #fff; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 16px; border-radius: 999px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.18); }
 
+/* Seletor de setor (gestor com mais de um setor): troca o painel navegando p/ /painel/<outro> */
+.setor-switch { position: relative; }
+.setor-switch-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: none; padding: 0; margin: 0; cursor: pointer; color: inherit; font: inherit; }
+.setor-switch-toggle .panel-dept { cursor: pointer; }
+.setor-switch-chevron { width: 18px; height: 18px; color: #fff; opacity: .85; transition: transform .18s; }
+.setor-switch-toggle[aria-expanded="true"] .setor-switch-chevron { transform: rotate(180deg); }
+.setor-switch-menu { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 60; min-width: 210px; background: var(--rd-panel); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,.45); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.setor-switch-item { display: block; padding: 10px 14px; border-radius: 8px; color: var(--rd-text-dim); text-decoration: none; font-size: 1rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap; }
+.setor-switch-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+.setor-switch-item.atual { background: rgba(12,119,173,.4); color: #fff; }
+
 /* Indicador da equipe atual (modo por_equipe) */
 .team-badge { display: none; flex-direction: column; align-items: center; line-height: 1.2; text-align: center; }
 .team-badge.visible { display: flex; }

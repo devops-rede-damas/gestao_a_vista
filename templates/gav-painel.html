@@ -20,7 +20,19 @@
             </div>
         </div>
         <div class="topbar-center">
-            {% if exibicao and exibicao.nome %}<span class="panel-dept">{{ exibicao.nome }}</span>{% endif %}
+            {% if logado and setores_usuario and setores_usuario|length > 1 %}
+            <div class="setor-switch" id="setor-switch">
+                <button type="button" class="setor-switch-toggle" id="setor-switch-toggle" aria-haspopup="true" aria-expanded="false">
+                    <span class="panel-dept">{{ exibicao.nome if exibicao and exibicao.nome else setor }}</span>
+                    <svg class="setor-switch-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+                <div class="setor-switch-menu" id="setor-switch-menu" hidden>
+                    {% for s in setores_usuario %}
+                    <a href="{{ url_for('painel', setor=s.chave) }}" class="setor-switch-item{% if s.chave == setor %} atual{% endif %}">{{ s.nome }}</a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% elif exibicao and exibicao.nome %}<span class="panel-dept">{{ exibicao.nome }}</span>{% endif %}
             <div class="team-nav">
                 <button type="button" id="team-prev" class="team-nav-btn" aria-label="Equipe anterior">&#8249;</button>
                 <div id="team-badge" class="team-badge">
@@ -100,6 +112,27 @@
             if (!cont) return;
             setTimeout(function () { cont.classList.add("toast-hide"); }, 4000);
             setTimeout(function () { cont.remove(); }, 4600);
+        })();
+    </script>
+    <script>
+        // Seletor de setor (gestor com mais de um setor): abre/fecha o menu.
+        (function () {
+            var sw = document.getElementById("setor-switch");
+            if (!sw) return;
+            var toggle = document.getElementById("setor-switch-toggle");
+            var menu = document.getElementById("setor-switch-menu");
+            toggle.addEventListener("click", function (e) {
+                e.stopPropagation();
+                var abrir = menu.hidden;
+                menu.hidden = !abrir;
+                toggle.setAttribute("aria-expanded", String(abrir));
+            });
+            document.addEventListener("click", function (e) {
+                if (!sw.contains(e.target)) {
+                    menu.hidden = true;
+                    toggle.setAttribute("aria-expanded", "false");
+                }
+            });
         })();
     </script>
     <script src="{{ url_for('static', filename='js/dashboard.js') }}" type="module"></script>
