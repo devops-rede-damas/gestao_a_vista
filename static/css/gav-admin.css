@@ -143,6 +143,23 @@
 .chip-papel-adm    { background: #ede9fe; color: #6d28d9; }
 .chip-papel-tv     { background: #e0f2fe; color: #0369a1; }
 .chip-none    { color: var(--ink-4); font-style: italic; }
+.chip-setor   { background: var(--bd-soft); color: var(--ink-2); text-transform: none; letter-spacing: normal; font-weight: 600; }
+.chip-setor-primario { background: #e0f2fe; color: var(--brand-dark); }
+.chip-star    { color: #f59e0b; font-size: 11px; line-height: 1; }
+
+/* Lista de setores (checkboxes) no modal de usuário — evita o clipping de um dropdown */
+.chk-list {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 190px; overflow-y: auto;
+  border: 1px solid var(--bd); border-radius: 8px; padding: 6px; background: #fff;
+}
+.chk-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 14px; font-weight: 500; color: var(--ink-2);
+}
+.chk-item:hover { background: var(--bd-soft); }
+.chk-item input { width: 15px; height: 15px; accent-color: var(--brand); cursor: pointer; flex-shrink: 0; }
 
 .row-actions { display: inline-flex; gap: 6px; white-space: nowrap; }
 

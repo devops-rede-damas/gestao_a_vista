@@ -68,6 +68,44 @@ def _setor_valido(setor):
     return setor, True
 
 
+def _setores_validos(setores):
+    """Valida uma lista de setores. Retorna (lista_normalizada_sem_duplicatas, ok).
+
+    Lista vazia é permitida (ex.: ADM não tem setor). Cada setor precisa existir.
+    """
+    if not isinstance(setores, list):
+        return [], False
+    normalizados = []
+    for s in setores:
+        s = str(s).strip()
+        if not s:
+            continue
+        if s not in available_sectors():
+            return [], False
+        if s not in normalizados:
+            normalizados.append(s)
+    return normalizados, True
+
+
+def _setores_e_primario(dados):
+    """Extrai e valida os setores (lista) e o principal do payload.
+
+    Aceita `setores` (lista) ou, por compatibilidade, `setor` (único). Retorna
+    (setores, primario, erro); `erro` é None quando tudo é válido.
+    """
+    if "setores" in dados:
+        setores, ok = _setores_validos(dados.get("setores"))
+    else:
+        setor, ok = _setor_valido(dados.get("setor"))
+        setores = [setor] if setor else []
+    if not ok:
+        return [], None, "Setor inexistente."
+    primario = (dados.get("setor_primario") or "").strip() or None
+    if primario and primario not in setores:
+        return [], None, "O setor principal precisa estar entre os setores do usuário."
+    return setores, primario, None
+
+
 # ── Página (HTML) ──────────────────────────────────────────────────────────────
 @admin_bp.route("/admin/usuarios")
 @papel_obrigatorio("ADM")
@@ -106,7 +144,7 @@ def api_listar():
             or termo in (u.get("chapa") or "").lower()
         ]
     if setor:
-        usuarios = [u for u in usuarios if (u.get("setor") or "") == setor]
+        usuarios = [u for u in usuarios if setor in (u.get("setores") or [])]
     return jsonify(usuarios)
 
 
@@ -133,9 +171,9 @@ def api_criar():
     papel = (dados.get("papel") or "gestor").strip()
     if papel not in _PAPEIS_VALIDOS:
         return jsonify({"erro": f"Papel inválido. Use: {', '.join(sorted(_PAPEIS_VALIDOS))}."}), 400
-    setor, ok = _setor_valido(dados.get("setor"))
-    if not ok:
-        return jsonify({"erro": "Setor inexistente."}), 400
+    setores, primario, erro = _setores_e_primario(dados)
+    if erro:
+        return jsonify({"erro": erro}), 400
     if buscar_por_email(email):
         return jsonify({"erro": "Já existe um usuário com esse e-mail."}), 409
 
@@ -150,7 +188,8 @@ def api_criar():
         "email": email,
         "nome": nome,
         "papel": papel,
-        "setor": setor,
+        "setores": setores,
+        "setor_primario": primario,
         "senha_hash": hash_senha(senha),
         "chapa": (dados.get("chapa") or None),
         "cargo": (dados.get("cargo") or None),
@@ -190,11 +229,12 @@ def api_atualizar(uid):
         if papel not in _PAPEIS_VALIDOS:
             return jsonify({"erro": f"Papel inválido. Use: {', '.join(sorted(_PAPEIS_VALIDOS))}."}), 400
         campos["papel"] = papel
-    if "setor" in dados:
-        setor, ok = _setor_valido(dados.get("setor"))
-        if not ok:
-            return jsonify({"erro": "Setor inexistente."}), 400
-        campos["setor"] = setor
+    if "setores" in dados or "setor" in dados:
+        setores, primario, erro = _setores_e_primario(dados)
+        if erro:
+            return jsonify({"erro": erro}), 400
+        campos["setores"] = setores
+        campos["setor_primario"] = primario
     if "chapa" in dados:
         campos["chapa"] = (dados.get("chapa") or None)
     if "cargo" in dados:

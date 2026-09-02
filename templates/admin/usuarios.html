@@ -134,11 +134,14 @@
             </div>
           </div>
           <div class="modal-field">
-            <label for="u-setor">Setor</label>
-            <select id="u-setor">
-              <option value="">(sem setor)</option>
-              {% for s in setores %}<option value="{{ s.chave }}">{{ s.nome }}</option>{% endfor %}
-            </select>
+            <label>Setores</label>
+            <div class="chk-list" id="u-setores"></div>
+            <span class="hint">Marque um ou mais setores que este usuário acompanha.</span>
+          </div>
+          <div class="modal-field" id="campo-setor-primario" style="display:none">
+            <label for="u-setor-primario">Setor principal</label>
+            <select id="u-setor-primario"></select>
+            <span class="hint">Onde o usuário cai ao entrar (aparece com 2 ou mais setores).</span>
           </div>
           <div class="modal-field">
             <label for="u-papel">Papel</label>
