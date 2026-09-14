@@ -159,7 +159,7 @@
   font-size: 14px; font-weight: 500; color: var(--ink-2);
 }
 .chk-item:hover { background: var(--bd-soft); }
-.chk-item input { width: 15px; height: 15px; accent-color: var(--brand); cursor: pointer; flex-shrink: 0; }
+.chk-item input[type="checkbox"] { width: 15px; height: 15px; accent-color: var(--brand); cursor: pointer; flex-shrink: 0; }
 
 .row-actions { display: inline-flex; gap: 6px; white-space: nowrap; }
 

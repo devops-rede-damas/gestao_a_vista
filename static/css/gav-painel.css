@@ -117,6 +117,7 @@ body {
 .setor-switch-chevron { width: 18px; height: 18px; color: #fff; opacity: .85; transition: transform .18s; }
 .setor-switch-toggle[aria-expanded="true"] .setor-switch-chevron { transform: rotate(180deg); }
 .setor-switch-menu { position: absolute; top: calc(100% + 8px); left: 50%; transform: translateX(-50%); z-index: 60; min-width: 210px; background: var(--rd-panel); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; box-shadow: 0 14px 36px rgba(0,0,0,.45); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
+.setor-switch-menu[hidden] { display: none; }
 .setor-switch-item { display: block; padding: 10px 14px; border-radius: 8px; color: var(--rd-text-dim); text-decoration: none; font-size: 1rem; font-weight: 600; letter-spacing: .3px; white-space: nowrap; }
 .setor-switch-item:hover { background: rgba(255,255,255,.08); color: #fff; }
 .setor-switch-item.atual { background: rgba(12,119,173,.4); color: #fff; }
