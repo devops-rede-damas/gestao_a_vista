@@ -11,6 +11,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, ses
 
 from services.movidesk_api import get_tickets
 from core.sectors import available_sectors, sector_display
+from core.setores_config import carregar_modos, carregar_equipes
 from core.avatars import carregar_catalogo
 from core.colaboradores import carregar_config as carregar_colaboradores
 from core.webauth import auth_bp, login_obrigatorio, redirecionar_sem_acesso, resolver_usuario, setor_autorizado
@@ -135,6 +136,23 @@ def _nomes_exibicao():
     }
 
 
+def _exibicao_efetiva(setor):
+    """Exibicao efetiva do painel: modo e equipes com a sobreposicao do banco.
+
+    Mantem core.sectors puro — a base vem do setores.json e aqui aplicamos os overrides:
+    o modo do banco vence o padrao do JSON; as equipes descobertas (banco) substituem as
+    explicitas do JSON quando existem. Tolerante: banco fora -> mantem o padrao do JSON.
+    """
+    base = sector_display(setor)
+    modo = carregar_modos().get(setor)
+    if modo:
+        base["modo"] = modo
+    equipes = carregar_equipes().get(setor)
+    if equipes:
+        base["equipes"] = equipes
+    return base
+
+
 def _setores_do_logado():
     """Setores do usuario logado (para o seletor do painel); vazio p/ TV/anonimo.
 
@@ -165,7 +183,7 @@ def gv_movidesk():
         return redirecionar_sem_acesso("ti")
     tickets = _filtrar_visiveis(_fetch_tickets("ti") or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao(), setores_usuario=_setores_do_logado())
+    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=_exibicao_efetiva("ti"), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao(), setores_usuario=_setores_do_logado())
 
 
 @app.route("/painel/<setor>")
@@ -177,7 +195,7 @@ def painel(setor):
         return redirecionar_sem_acesso(setor)
     tickets = _filtrar_visiveis(_fetch_tickets(setor) or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao(), setores_usuario=_setores_do_logado())
+    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=_exibicao_efetiva(setor), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao(), setores_usuario=_setores_do_logado())
 
 
 @app.route("/api/tickets")
