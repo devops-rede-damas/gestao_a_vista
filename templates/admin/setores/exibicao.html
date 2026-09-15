@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Exibição dos setores — Gestão à Vista</title>
+  <title>Modo de exibição — Gestão à Vista</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,15 +30,21 @@
         <div class="admin-titlebar">
           <h1 class="admin-title">Painel Admin</h1>
           <span class="admin-title-sep" aria-hidden="true">·</span>
-          <span class="admin-subtitle">Exibição</span>
+          <span class="admin-subtitle">Modo de exibição</span>
         </div>
         <p class="admin-desc">Escolha como o painel de cada setor é exibido: todas as equipes juntas ou uma equipe por vez (rodízio).</p>
       </div>
     </div>
 
     <nav class="setores-subnav">
-      <a href="{{ url_for('admin.setores_paineis') }}" class="setores-subnav-link{% if subativo == 'paineis' %} active{% endif %}">Painéis</a>
-      <a href="{{ url_for('admin.setores_exibicao') }}" class="setores-subnav-link{% if subativo == 'exibicao' %} active{% endif %}">Exibição</a>
+      <a href="{{ url_for('admin.setores_paineis') }}" class="setores-subnav-link{% if subativo == 'paineis' %} active{% endif %}">
+        <svg class="subnav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Painéis
+      </a>
+      <a href="{{ url_for('admin.setores_exibicao') }}" class="setores-subnav-link{% if subativo == 'exibicao' %} active{% endif %}">
+        <svg class="subnav-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+        Modo de exibição
+      </a>
     </nav>
 
     {% if setores %}
@@ -48,15 +54,21 @@
         <div class="exib-info">
           <span class="exib-nome">{{ s.nome }}</span>
           <span class="exib-meta">
-            {{ s.qtd_equipes }} equipe{{ 's' if s.qtd_equipes != 1 else '' }} ·
+            <span class="exib-qtd">{{ s.qtd_equipes }}</span> <span class="exib-qtd-rot">equipe{{ 's' if s.qtd_equipes != 1 else '' }}</span> ·
             <span class="exib-modo-label">{{ 'Uma equipe por vez' if s.modo == 'por_equipe' else 'Todas as equipes juntas' }}</span>
           </span>
         </div>
-        <label class="switch">
-          <input type="checkbox" class="exib-toggle" data-setor="{{ s.chave }}"{% if s.modo == 'por_equipe' %} checked{% endif %}>
-          <span class="switch-track"></span>
-          <span class="switch-label">Por equipe</span>
-        </label>
+        <div class="exib-actions">
+          <button type="button" class="btn-atualizar-equipes" data-setor="{{ s.chave }}" title="Descobre as equipes deste setor na API do Movidesk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Atualizar equipes
+          </button>
+          <label class="switch">
+            <input type="checkbox" class="exib-toggle" data-setor="{{ s.chave }}"{% if s.modo == 'por_equipe' %} checked{% endif %}>
+            <span class="switch-track"></span>
+            <span class="switch-label">Por equipe</span>
+          </label>
+        </div>
       </div>
       {% endfor %}
     </div>

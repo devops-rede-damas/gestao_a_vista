@@ -56,3 +56,31 @@ document.querySelectorAll(".exib-toggle").forEach((input) => {
     definirModo(input.dataset.setor, input.checked, input, meta);
   });
 });
+
+async function atualizarEquipes(setor, btn, item) {
+  btn.disabled = true;
+  btn.classList.add("carregando");
+  try {
+    const resp = await fetch(`${API}/${encodeURIComponent(setor)}/equipes/atualizar`, { method: "POST" });
+    const dados = await resp.json().catch(() => ({}));
+    if (!resp.ok) throw new Error(dados.erro || "Erro ao atualizar.");
+    const qtd = dados.qtd || 0;
+    const qtdEl = item && item.querySelector(".exib-qtd");
+    const rotEl = item && item.querySelector(".exib-qtd-rot");
+    if (qtdEl) qtdEl.textContent = qtd;
+    if (rotEl) rotEl.textContent = "equipe" + (qtd !== 1 ? "s" : "");
+    toast(`${qtd} equipe${qtd !== 1 ? "s" : ""} descoberta${qtd !== 1 ? "s" : ""}.`, "ok");
+  } catch (e) {
+    toast(e.message, "erro", "Não atualizou");
+  } finally {
+    btn.disabled = false;
+    btn.classList.remove("carregando");
+  }
+}
+
+document.querySelectorAll(".btn-atualizar-equipes").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const item = btn.closest(".exib-item");
+    atualizarEquipes(btn.dataset.setor, btn, item);
+  });
+});

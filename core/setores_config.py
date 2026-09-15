@@ -45,11 +45,12 @@ def carregar_modos():
     return {r["setor"]: r["exibicao"] for r in rows if r["exibicao"] in MODOS_VALIDOS}
 
 
-def definir_modo(setor, modo, padrao=None):
+def definir_modo(setor, modo, padrao=None, por=None):
     """Grava o modo de exibição do setor.
 
     Se <modo> for igual ao <padrao> do setores.json, REMOVE a linha (a tabela guarda só
-    exceções). Retorna o modo gravado. Erros de banco viram SetorConfigError.
+    exceções). <por> é o e-mail do admin (auditoria). Retorna o modo gravado. Erros de
+    banco viram SetorConfigError.
     """
     if modo not in MODOS_VALIDOS:
         raise SetorConfigError(f"Modo inválido: {modo!r}. Use um de {MODOS_VALIDOS}.")
@@ -63,9 +64,9 @@ def definir_modo(setor, modo, padrao=None):
                 cursor.execute(f"DELETE FROM {_TABELA_CONFIG} WHERE setor = %s", (setor,))
             else:
                 cursor.execute(
-                    f"INSERT INTO {_TABELA_CONFIG} (setor, exibicao) VALUES (%s, %s) "
-                    "ON DUPLICATE KEY UPDATE exibicao = VALUES(exibicao)",
-                    (setor, modo),
+                    f"INSERT INTO {_TABELA_CONFIG} (setor, exibicao, atualizado_por) VALUES (%s, %s, %s) "
+                    "ON DUPLICATE KEY UPDATE exibicao = VALUES(exibicao), atualizado_por = VALUES(atualizado_por)",
+                    (setor, modo, por),
                 )
     except pymysql.MySQLError as exc:
         raise SetorConfigError(f"Falha ao gravar no banco: {exc}") from exc
@@ -101,11 +102,12 @@ def equipes_de(setor, mapa=None):
     return list(mapa.get(setor, []))
 
 
-def substituir_equipes(setor, equipes):
+def substituir_equipes(setor, equipes, origem="robo"):
     """Substitui (atômico) as equipes descobertas de um setor. Usado pelo robô/admin.
 
-    Remove as antigas e insere a lista nova numa transação. Retorna a lista gravada
-    (sem vazios/duplicatas). Erros de banco viram SetorConfigError.
+    Remove as antigas e insere a lista nova numa transação. <origem> ('robo'|'admin')
+    registra de onde veio a alimentação (auditoria). Retorna a lista gravada (sem
+    vazios/duplicatas). Erros de banco viram SetorConfigError.
     """
     novas = list(dict.fromkeys(e.strip() for e in equipes if e and e.strip()))
     try:
@@ -118,8 +120,8 @@ def substituir_equipes(setor, equipes):
             cursor.execute(f"DELETE FROM {_TABELA_EQUIPES} WHERE setor = %s", (setor,))
             if novas:
                 cursor.executemany(
-                    f"INSERT INTO {_TABELA_EQUIPES} (setor, equipe) VALUES (%s, %s)",
-                    [(setor, e) for e in novas],
+                    f"INSERT INTO {_TABELA_EQUIPES} (setor, equipe, origem) VALUES (%s, %s, %s)",
+                    [(setor, e, origem) for e in novas],
                 )
         con.commit()
     except pymysql.MySQLError as exc:

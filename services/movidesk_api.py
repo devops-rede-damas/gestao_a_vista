@@ -91,6 +91,35 @@ def get_open_tickets_owners(session=None, page_size=1000, max_pages=20):
     return coletados
 
 
+def get_setor_team_names(setor, desde, session=None, page_size=1000, max_pages=30):
+    """Nomes de equipe (ownerTeam) DISTINTOS de um setor numa janela histórica.
+
+    Read-only. Usa o mesmo escopo do setor (build_day_filter) e traz só ownerTeam,
+    paginando via $skip. Base da descoberta de equipes (setor_equipes): a janela ampla
+    (qualquer status) revela até equipes hoje zeradas na fila. Devolve lista ordenada,
+    sem repetição.
+    """
+    http = session or requests
+    base = {
+        "token": os.getenv("MOVIDESK_TOKEN"),
+        "$select": "ownerTeam",
+        "$filter": build_day_filter(setor, desde),
+    }
+    nomes = set()
+    for pagina in range(max_pages):
+        params = {**base, "$top": page_size, "$skip": pagina * page_size}
+        response = http.get(BASE_URL, params=params, timeout=60)
+        response.raise_for_status()
+        lote = response.json()
+        for ticket in lote:
+            equipe = ticket.get("ownerTeam")
+            if equipe:
+                nomes.add(equipe)
+        if len(lote) < page_size:
+            break
+    return sorted(nomes)
+
+
 if __name__ == "__main__":
     # Teste isolado da Etapa 1: busca os tickets e imprime um resumo.
     if not os.getenv("MOVIDESK_TOKEN"):

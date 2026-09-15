@@ -15,7 +15,7 @@ import secrets
 import unicodedata
 
 import requests
-from flask import Blueprint, abort, jsonify, render_template, request, url_for
+from flask import Blueprint, abort, jsonify, render_template, request, session, url_for
 
 from core.auth import hash_senha
 from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
@@ -44,6 +44,7 @@ from core.usuarios import (
     listar_para_admin,
 )
 from core.webauth import papel_obrigatorio
+from services.descoberta_equipes import descobrir_setor
 from services.movidesk_api import get_open_tickets_owners
 
 logger = logging.getLogger(__name__)
@@ -391,11 +392,31 @@ def api_setor_exibicao(setor):
     if modo not in MODOS_VALIDOS:
         return jsonify({"erro": "Modo inválido."}), 400
     try:
-        definir_modo(setor, modo, padrao=sector_display(setor)["modo"])
+        definir_modo(setor, modo, padrao=sector_display(setor)["modo"], por=(session.get("usuario") or {}).get("email"))
     except SetorConfigError as exc:
         logger.warning("Falha ao definir exibição de %s: %s", setor, exc)
         return jsonify({"erro": "Não foi possível salvar."}), 503
     return jsonify({"setor": setor, "exibicao": modo})
+
+
+@admin_bp.route("/admin/api/setores/<setor>/equipes/atualizar", methods=["POST"])
+@papel_obrigatorio("ADM")
+def api_setor_equipes_atualizar(setor):
+    """Descobre as equipes do setor na API (Movidesk) e regrava em setor_equipes.
+
+    Disparo manual do botão "Atualizar equipes" (origem='admin'). Mesma lógica do robô.
+    """
+    if setor not in available_sectors():
+        abort(404)
+    try:
+        equipes = descobrir_setor(setor, origem="admin")
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Falha ao descobrir equipes de %s: %s", setor, exc)
+        return jsonify({"erro": "Não foi possível consultar o Movidesk."}), 503
+    except SetorConfigError as exc:
+        logger.warning("Falha ao gravar equipes de %s: %s", setor, exc)
+        return jsonify({"erro": "Não foi possível salvar."}), 503
+    return jsonify({"setor": setor, "equipes": equipes, "qtd": len(equipes)})
 
 
 @admin_bp.route("/admin/api/responsaveis/<owner_id>/foto", methods=["POST"])
