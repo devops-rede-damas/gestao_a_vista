@@ -135,6 +135,17 @@ def _nomes_exibicao():
     }
 
 
+def _setores_do_logado():
+    """Setores do usuario logado (para o seletor do painel); vazio p/ TV/anonimo.
+
+    O 1o item e o setor principal (a leitura ja ordena o principal primeiro).
+    """
+    usuario = session.get("usuario") or {}
+    if usuario.get("papel") == "tv":
+        return []
+    return [{"chave": s, "nome": sector_display(s)["nome"]} for s in (usuario.get("setores") or [])]
+
+
 def _filtrar_visiveis(tickets):
     """Remove os tickets cujo dono foi marcado para NAO exibir no painel (admin).
 
@@ -154,7 +165,7 @@ def gv_movidesk():
         return redirecionar_sem_acesso("ti")
     tickets = _filtrar_visiveis(_fetch_tickets("ti") or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao())
+    return render_template("gav-painel.html", tickets=tickets, setor="ti", exibicao=sector_display("ti"), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao(), setores_usuario=_setores_do_logado())
 
 
 @app.route("/painel/<setor>")
@@ -166,7 +177,7 @@ def painel(setor):
         return redirecionar_sem_acesso(setor)
     tickets = _filtrar_visiveis(_fetch_tickets(setor) or [])
     logado = session["usuario"].get("papel") != "tv"
-    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao())
+    return render_template("gav-painel.html", tickets=tickets, setor=setor, exibicao=sector_display(setor), logado=logado, avatars=_avatars_urls(), nomes=_nomes_exibicao(), setores_usuario=_setores_do_logado())
 
 
 @app.route("/api/tickets")

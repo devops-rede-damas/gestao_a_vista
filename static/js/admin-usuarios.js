@@ -71,11 +71,18 @@
   document.addEventListener("keydown", function (e) { if (e.key === "Escape") fecharTodos(); });
 
   // ── Renderizadores de célula ─────────────────────────────────────────────
-  function renderSetor(chave) {
-    if (!chave) return '<span class="chip-none">—</span>';
-    // Mostra o código cru do banco; se não existir no setores.json, é um valor pendente.
-    if (!SETORES[chave]) return '<span class="chip-none">A definir</span>';
-    return escapeHtml(chave);
+  function renderSetores(setores, type, row) {
+    var lista = setores || [];
+    if (!lista.length) return '<span class="chip-none">—</span>';
+    var primario = row.setor_primario;
+    return lista.map(function (chave) {
+      var ehPrinc = chave === primario;
+      var cls = "chip chip-setor" + (ehPrinc ? " chip-setor-primario" : "");
+      var titulo = (SETORES[chave] || chave) + (ehPrinc ? " (principal)" : "");
+      var estrela = ehPrinc ? '<span class="chip-star" aria-hidden="true">★</span>' : "";
+      return '<span class="' + cls + '" title="' + escapeHtml(titulo) + '">' +
+        estrela + escapeHtml(chave) + "</span>";
+    }).join(" ");
   }
   function renderPapel(papel) {
     var p = String(papel || "").toLowerCase();
@@ -97,6 +104,56 @@
       "</div>";
   }
 
+  // ── Setores do usuário no modal (checkboxes + escolha do principal) ───────
+  function montarSetoresPicker() {
+    var box = document.getElementById("u-setores");
+    box.innerHTML = (CONFIG.setores || []).map(function (s) {
+      return '<label class="chk-item"><input type="checkbox" class="u-setor-cb" value="' +
+        escapeHtml(s.chave) + '"><span>' + escapeHtml(s.nome) + "</span></label>";
+    }).join("");
+    box.addEventListener("change", function (e) {
+      if (e.target && e.target.classList.contains("u-setor-cb")) atualizarPrincipal();
+    });
+  }
+  function setoresMarcados() {
+    return Array.prototype.map.call(
+      document.querySelectorAll(".u-setor-cb:checked"),
+      function (cb) { return cb.value; }
+    );
+  }
+  // O principal só faz sentido com 2+ setores; com 1 ele é implícito, com 0 não existe.
+  function atualizarPrincipal() {
+    var marcados = setoresMarcados();
+    var campo = document.getElementById("campo-setor-primario");
+    var sel = document.getElementById("u-setor-primario");
+    var atual = sel.value;
+    if (marcados.length >= 2) {
+      sel.innerHTML = marcados.map(function (s) {
+        return '<option value="' + escapeHtml(s) + '">' + escapeHtml(SETORES[s] || s) + "</option>";
+      }).join("");
+      if (marcados.indexOf(atual) !== -1) sel.value = atual;
+      campo.style.display = "";
+    } else {
+      sel.innerHTML = "";
+      campo.style.display = "none";
+    }
+  }
+  function definirSetoresMarcados(setores, primario) {
+    var alvo = {};
+    (setores || []).forEach(function (s) { alvo[s] = true; });
+    document.querySelectorAll(".u-setor-cb").forEach(function (cb) {
+      cb.checked = !!alvo[cb.value];
+    });
+    atualizarPrincipal();
+    if (primario) {
+      var sel = document.getElementById("u-setor-primario");
+      if (Array.prototype.some.call(sel.options, function (o) { return o.value === primario; })) {
+        sel.value = primario;
+      }
+    }
+  }
+  montarSetoresPicker();
+
   // ── DataTable ────────────────────────────────────────────────────────────
   var tabela = new DataTable("#tabela-usuarios", {
     ajax: { url: API, dataSrc: "" },
@@ -116,7 +173,7 @@
       { data: "email", render: function (d) { return escapeHtml(d); } },
       { data: "chapa", render: function (d) { return d ? escapeHtml(d) : '<span class="chip-none">—</span>'; } },
       { data: "cargo", render: function (d) { return d ? escapeHtml(d) : '<span class="chip-none">—</span>'; } },
-      { data: "setor", render: renderSetor },
+      { data: "setores", render: renderSetores, orderable: false },
       { data: "papel", render: renderPapel },
       { data: "ativo", render: renderStatus },
       { data: null, orderable: false, searchable: false, render: renderAcoes },
@@ -130,7 +187,7 @@
   DataTable.ext.search.push(function (settings, searchData, index, rowData) {
     if (settings.nTable.id !== "tabela-usuarios") return true;
     if (!filtroSetor) return true;
-    return (rowData.setor || "") === filtroSetor;
+    return (rowData.setores || []).indexOf(filtroSetor) !== -1;
   });
 
   // Contador de resultados + visibilidade do "Limpar filtros" (só com filtro ativo)
@@ -200,6 +257,7 @@
     document.getElementById("modal-usuario-titulo").textContent = "Novo usuário";
     document.getElementById("form-usuario").reset();
     document.getElementById("u-id").value = "";
+    definirSetoresMarcados([], null);
     document.getElementById("campo-status").style.display = "none";
     document.getElementById("campo-senha-nova").style.display = "";
     document.getElementById("u-senha-label").textContent = "Senha inicial";
@@ -215,7 +273,7 @@
     document.getElementById("u-email").value = row.email || "";
     document.getElementById("u-chapa").value = row.chapa || "";
     document.getElementById("u-cargo").value = row.cargo || "";
-    document.getElementById("u-setor").value = row.setor || "";
+    definirSetoresMarcados(row.setores, row.setor_primario);
     document.getElementById("u-papel").value = row.papel || "gestor";
     // Status: toggle refletindo o valor atual
     edicaoAtivoOriginal = !!row.ativo;
@@ -247,12 +305,16 @@
   document.getElementById("form-usuario").addEventListener("submit", function (e) {
     e.preventDefault();
     var id = document.getElementById("u-id").value;
+    var setoresSel = setoresMarcados();
     var payload = {
       nome: document.getElementById("u-nome").value.trim(),
       email: document.getElementById("u-email").value.trim(),
       chapa: document.getElementById("u-chapa").value.trim() || null,
       cargo: document.getElementById("u-cargo").value.trim() || null,
-      setor: document.getElementById("u-setor").value || null,
+      setores: setoresSel,
+      setor_primario: setoresSel.length >= 2
+        ? document.getElementById("u-setor-primario").value
+        : (setoresSel[0] || null),
       papel: document.getElementById("u-papel").value,
     };
     setSalvando(true);
