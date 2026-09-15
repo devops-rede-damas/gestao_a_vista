@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Painéis — Gestão à Vista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/gav-admin.css') }}">
+</head>
+<body class="admin-page">
+
+  <header class="admin-topbar">
+    <img src="{{ url_for('static', filename='img/logo_branco.svg') }}" alt="Rede Damas" class="admin-topbar-logo">
+    <span class="admin-topbar-title">Gestão à Vista</span>
+    <nav class="admin-nav">
+      <a href="{{ url_for('admin.usuarios') }}" class="admin-nav-link{% if active == 'usuarios' %} active{% endif %}">Usuários</a>
+      <a href="{{ url_for('admin.colaboradores') }}" class="admin-nav-link{% if active == 'colaboradores' %} active{% endif %}">Colaboradores</a>
+      <a href="{{ url_for('admin.setores_paineis') }}" class="admin-nav-link{% if active == 'setores' %} active{% endif %}">Setores</a>
+    </nav>
+    <span class="admin-topbar-spacer"></span>
+    {% if session.usuario %}<span class="admin-topbar-user">{{ session.usuario.email }}</span>{% endif %}
+    <a href="{{ url_for('auth.logout') }}">Sair</a>
+  </header>
+
+  <div class="admin-wrap">
+    <div class="admin-head">
+      <div>
+        <div class="admin-titlebar">
+          <h1 class="admin-title">Painel Admin</h1>
+          <span class="admin-title-sep" aria-hidden="true">·</span>
+          <span class="admin-subtitle">Painéis</span>
+        </div>
+        <p class="admin-desc">Abra o painel de qualquer setor. Cada painel abre em uma nova aba.</p>
+      </div>
+    </div>
+
+    {% if setores %}
+    <div class="paineis-grid">
+      {% for s in setores %}
+      <a class="painel-card" href="{{ url_for('painel', setor=s.chave) }}" target="_blank" rel="noopener">
+        <span class="painel-card-head">
+          <span class="painel-card-nome">{{ s.nome }}</span>
+          <svg class="painel-card-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </span>
+        <span class="painel-card-chave">{{ s.chave }}</span>
+        <span class="painel-card-cta">Abrir painel</span>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="admin-card"><p class="admin-desc" style="padding:16px">Nenhum setor configurado.</p></div>
+    {% endif %}
+  </div>
+
+</body>
+</html>

@@ -12,6 +12,7 @@ Exclusão não existe: usuários são apenas ativados/inativados (ativo=0).
 """
 import logging
 import secrets
+import unicodedata
 
 import requests
 from flask import Blueprint, abort, jsonify, render_template, request, url_for
@@ -44,6 +45,12 @@ admin_bp = Blueprint("admin", __name__)
 
 _PAPEIS_VALIDOS = {"gestor", "tv", "ADM"}
 _SENHA_MIN = 8
+
+
+def _chave_ordenacao(texto):
+    """Chave de ordenação alfabética insensível a acento/caixa (Contábil ~ Contabil)."""
+    decomposto = unicodedata.normalize("NFKD", str(texto))
+    return "".join(c for c in decomposto if not unicodedata.combining(c)).casefold()
 
 
 def _email_valido(email):
@@ -126,6 +133,17 @@ def colaboradores():
     """Tela de gestão dos colaboradores (fotos dos responsáveis pelos tickets)."""
     setores = [{"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()]
     return render_template("admin/colaboradores.html", setores=setores, active="colaboradores")
+
+
+@admin_bp.route("/admin/setores/paineis")
+@papel_obrigatorio("ADM")
+def setores_paineis():
+    """Galeria de painéis: o ADM (superusuário) abre o painel de qualquer setor."""
+    setores = sorted(
+        ({"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()),
+        key=lambda d: _chave_ordenacao(d["nome"]),
+    )
+    return render_template("admin/setores/paineis.html", setores=setores, active="setores")
 
 
 # ── API (JSON) ─────────────────────────────────────────────────────────────────
