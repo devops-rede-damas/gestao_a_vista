@@ -137,8 +137,14 @@ def papel_obrigatorio(papel):
 
 
 def setor_autorizado(setor):
-    """True se o usuário autenticado tem acesso ao setor (cada um vê só o seu)."""
+    """True se o usuário autenticado tem acesso ao setor.
+
+    Cada usuário vê só os seus setores; o ADM é superusuário e vê todos (a validade
+    do setor em si já é checada por quem chama, então liberar aqui não abre brecha).
+    """
     usuario = session.get("usuario") or {}
+    if (usuario.get("papel") or "").upper() == "ADM":
+        return True
     return setor in (usuario.get("setores") or [])
 
 
