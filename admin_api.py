@@ -128,6 +128,14 @@ def colaboradores():
     return render_template("admin/colaboradores.html", setores=setores, active="colaboradores")
 
 
+@admin_bp.route("/admin/setores/paineis")
+@papel_obrigatorio("ADM")
+def setores_paineis():
+    """Galeria de painéis: o ADM (superusuário) abre o painel de qualquer setor."""
+    setores = [{"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()]
+    return render_template("admin/setores/paineis.html", setores=setores, active="setores")
+
+
 # ── API (JSON) ─────────────────────────────────────────────────────────────────
 @admin_bp.route("/admin/api/usuarios", methods=["GET"])
 @papel_obrigatorio("ADM")
