@@ -36,6 +36,7 @@ from core.usuarios import (
     definir_senha,
     listar_para_admin,
 )
+from core.validacao import contem_caractere_proibido
 from core.webauth import papel_obrigatorio
 from services.movidesk_api import get_open_tickets_owners
 
@@ -45,6 +46,8 @@ admin_bp = Blueprint("admin", __name__)
 
 _PAPEIS_VALIDOS = {"gestor", "tv", "ADM"}
 _SENHA_MIN = 8
+_ERRO_NOME_PROIBIDO = "O nome contém caracteres não permitidos (emojis ou símbolos inválidos)."
+_ERRO_SENHA_PROIBIDA = "A senha contém caracteres não permitidos (emojis ou símbolos inválidos)."
 
 
 def _chave_ordenacao(texto):
@@ -186,6 +189,8 @@ def api_criar():
     nome = (dados.get("nome") or "").strip()
     if not nome:
         return jsonify({"erro": "Nome é obrigatório."}), 400
+    if contem_caractere_proibido(nome):
+        return jsonify({"erro": _ERRO_NOME_PROIBIDO}), 400
     papel = (dados.get("papel") or "gestor").strip()
     if papel not in _PAPEIS_VALIDOS:
         return jsonify({"erro": f"Papel inválido. Use: {', '.join(sorted(_PAPEIS_VALIDOS))}."}), 400
@@ -201,6 +206,8 @@ def api_criar():
         senha = senha_temporaria = secrets.token_urlsafe(9)
     elif len(senha) < _SENHA_MIN:
         return jsonify({"erro": f"A senha deve ter ao menos {_SENHA_MIN} caracteres."}), 400
+    elif contem_caractere_proibido(senha):
+        return jsonify({"erro": _ERRO_SENHA_PROIBIDA}), 400
 
     novo = criar_usuario({
         "email": email,
@@ -241,6 +248,8 @@ def api_atualizar(uid):
         nome = (dados.get("nome") or "").strip()
         if not nome:
             return jsonify({"erro": "Nome é obrigatório."}), 400
+        if contem_caractere_proibido(nome):
+            return jsonify({"erro": _ERRO_NOME_PROIBIDO}), 400
         campos["nome"] = nome
     if "papel" in dados:
         papel = (dados.get("papel") or "").strip()
@@ -274,6 +283,8 @@ def api_senha(uid):
     senha = dados.get("senha") or ""
     if len(senha) < _SENHA_MIN:
         return jsonify({"erro": f"A senha deve ter ao menos {_SENHA_MIN} caracteres."}), 400
+    if contem_caractere_proibido(senha):
+        return jsonify({"erro": _ERRO_SENHA_PROIBIDA}), 400
     definir_senha(uid, hash_senha(senha))
     logger.info("ADM alterou a senha do usuário id=%s", uid)
     return jsonify({"ok": True})
@@ -340,8 +351,11 @@ def api_exibir(owner_id):
 def api_nome(owner_id):
     """Define o nome de exibição do colaborador nos painéis (vazio volta ao padrão)."""
     dados = request.get_json(silent=True) or {}
+    nome_exib = dados.get("nome")
+    if nome_exib and contem_caractere_proibido(nome_exib):
+        return jsonify({"erro": _ERRO_NOME_PROIBIDO}), 400
     try:
-        conf = definir_nome_exibicao(owner_id, dados.get("nome"))
+        conf = definir_nome_exibicao(owner_id, nome_exib)
     except ColaboradorConfigError as exc:
         logger.warning("Falha ao definir nome de %s: %s", owner_id, exc)
         return jsonify({"erro": "Não foi possível salvar."}), 503
