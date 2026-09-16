@@ -6,8 +6,10 @@ a autorização por setor (`setor_autorizado`) e o "remember-me" da TV — um co
 assinado de longa duração que faz a TV re-logar sozinha após reiniciar, sem
 mostrar a tela de login. Contas de TV têm papel "tv".
 """
+import hmac
 import logging
 import os
+import secrets
 import time
 from functools import wraps
 
@@ -20,6 +22,7 @@ from werkzeug.routing import BuildError
 from core.auth import setores_do_usuario, verificar_credenciais
 from core.sectors import available_sectors, sector_display
 from core.usuarios import buscar_por_email
+from core.validacao import contem_caractere_proibido
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,11 @@ auth_bp = Blueprint("auth", __name__)
 _MAX_TENTATIVAS = 5
 _JANELA_SEGUNDOS = 300
 _tentativas = {}  # chave -> lista de timestamps (monotonic) das falhas recentes
+
+# Tetos defensivos de tamanho dos campos de login. Barram entradas absurdas ANTES
+# do bcrypt (lento de propósito) — fecham um vetor de DoS por payload gigante.
+_MAX_EMAIL_LEN = 254  # RFC 5321: tamanho máximo de um endereço de e-mail
+_MAX_SENHA_LEN = 128
 
 # Cookie de lembrança da TV: permite a TV re-logar sozinha após reboot (papel "tv").
 _REMEMBER_COOKIE = "tv_auth"
@@ -191,6 +199,27 @@ def redirecionar_sem_acesso(setor_pedido):
     return redirect(destino)
 
 
+# ── CSRF do formulário de login (token por sessão; escopo: só o login) ───────
+def _csrf_token():
+    """Token CSRF da sessão (cria na 1ª vez)."""
+    token = session.get("csrf_token")
+    if not token:
+        token = session["csrf_token"] = secrets.token_urlsafe(32)
+    return token
+
+
+def _csrf_valido():
+    """True se o token do formulário casa com o da sessão (comparação em tempo constante)."""
+    esperado = session.get("csrf_token", "")
+    return bool(esperado) and hmac.compare_digest(request.form.get("csrf_token", ""), esperado)
+
+
+@auth_bp.context_processor
+def _injetar_csrf():
+    """Disponibiliza {{ csrf_token }} para o template de login."""
+    return {"csrf_token": _csrf_token()}
+
+
 @auth_bp.route("/login", methods=["GET", "POST"])
 def login():
     if session.get("usuario"):
@@ -200,19 +229,37 @@ def login():
         session.clear()  # sessão sem setor: recomeça o login
 
     if request.method == "POST":
-        email = request.form.get("email", "")
+        email = request.form.get("email", "").strip()
         senha = request.form.get("senha", "")
+
+        if not _csrf_valido():
+            logger.warning("Token CSRF inválido no login")
+            return render_template("gav-login.html", erro="Sua sessão expirou. Recarregue a página e tente novamente.", email=email), 400
+
         chave = _chave_rate(email)
 
         if _bloqueado(chave):
-            return render_template("gav-login.html", erro="Muitas tentativas. Aguarde alguns minutos e tente novamente."), 429
+            return render_template("gav-login.html", erro="Muitas tentativas. Aguarde alguns minutos e tente novamente.", email=email), 429
+
+        # Teto de tamanho: rejeita entradas absurdas antes do bcrypt (anti-DoS).
+        # Não repovoa o e-mail neste caso para não ecoar um payload gigante.
+        if len(email) > _MAX_EMAIL_LEN or len(senha) > _MAX_SENHA_LEN:
+            _registrar_falha(chave)
+            logger.info("Login rejeitado por tamanho excessivo dos campos")
+            return render_template("gav-login.html", erro="Credenciais inválidas."), 401
+
+        # Higiene de entrada: barra vazio, emojis/pictogramas e caracteres de
+        # controle antes de tocar o banco/bcrypt. Mensagem genérica (não vaza nada).
+        if not email or not senha or contem_caractere_proibido(email, senha):
+            _registrar_falha(chave)
+            return render_template("gav-login.html", erro="Credenciais inválidas.", email=email), 401
 
         usuario = verificar_credenciais(email, senha)
         if not usuario:
             _registrar_falha(chave)
-            logger.info("Falha de login para %s", (email or "").strip().lower())
+            logger.info("Falha de login para %s", email.lower())
             # Mensagem genérica: não revela se o e-mail existe.
-            return render_template("gav-login.html", erro="Credenciais inválidas."), 401
+            return render_template("gav-login.html", erro="Credenciais inválidas.", email=email), 401
 
         _tentativas.pop(chave, None)
         session.clear()  # evita fixação de sessão: começa uma sessão limpa no login
@@ -225,7 +272,7 @@ def login():
         if not destino:
             session.clear()
             logger.warning("Usuário sem setor configurado: %s", usuario.get("email"))
-            return render_template("gav-login.html", erro="Usuário sem setor configurado. Contate o administrador."), 403
+            return render_template("gav-login.html", erro="Usuário sem setor configurado. Contate o administrador.", email=email), 403
 
         resp = redirect(destino)
         # Conta de TV: emite o cookie de lembrança (re-login automático após reboot).

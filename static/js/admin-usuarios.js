@@ -256,6 +256,7 @@
   function abrirCriacao() {
     document.getElementById("modal-usuario-titulo").textContent = "Novo usuário";
     document.getElementById("form-usuario").reset();
+    limparErros();
     document.getElementById("u-id").value = "";
     definirSetoresMarcados([], null);
     document.getElementById("campo-status").style.display = "none";
@@ -268,6 +269,7 @@
   }
   function abrirEdicao(row) {
     document.getElementById("modal-usuario-titulo").textContent = "Gerenciar usuário";
+    limparErros();
     document.getElementById("u-id").value = row.id;
     document.getElementById("u-nome").value = row.nome || "";
     document.getElementById("u-email").value = row.email || "";
@@ -302,6 +304,46 @@
       : btnSalvarHtml;
   }
 
+  // ── Validação inline dos campos (mesmo padrão da tela de login) ──────────
+  var reEmailUsuario = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  // Emojis/pictogramas e caracteres de controle/invisíveis (espelha o backend).
+  var reProibidoUsuario = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060\uFEFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]|[\uD800-\uDBFF][\uDC00-\uDFFF]/;
+  var CAMPOS_ERRO = {
+    nome: { input: "u-nome", span: "err-u-nome" },
+    email: { input: "u-email", span: "err-u-email" },
+    senha: { input: "u-senha", span: "err-u-senha" },
+  };
+
+  function marcarErro(campo, msg) {
+    var ref = CAMPOS_ERRO[campo];
+    var input = document.getElementById(ref.input);
+    var span = document.getElementById(ref.span);
+    input.setAttribute("aria-invalid", "true");
+    if (span) span.textContent = msg;
+    return input;
+  }
+  function limparErro(campo) {
+    var ref = CAMPOS_ERRO[campo];
+    document.getElementById(ref.input).removeAttribute("aria-invalid");
+    var span = document.getElementById(ref.span);
+    if (span) span.textContent = "";
+  }
+  function limparErros() { Object.keys(CAMPOS_ERRO).forEach(limparErro); }
+
+  // Limpa o erro do campo assim que o ADM corrige.
+  Object.keys(CAMPOS_ERRO).forEach(function (campo) {
+    document.getElementById(CAMPOS_ERRO[campo].input)
+      .addEventListener("input", function () { limparErro(campo); });
+  });
+
+  // Roteia um erro do servidor para o campo certo (senão, cai no toast geral).
+  function erroServidorParaCampo(msg) {
+    if (/mail/i.test(msg)) return "email";
+    if (/nome/i.test(msg)) return "nome";
+    if (/senha/i.test(msg)) return "senha";
+    return null;
+  }
+
   document.getElementById("form-usuario").addEventListener("submit", function (e) {
     e.preventDefault();
     var id = document.getElementById("u-id").value;
@@ -317,17 +359,45 @@
         : (setoresSel[0] || null),
       papel: document.getElementById("u-papel").value,
     };
+
+    // Validação inline (mesmo padrão do login): sem balão nativo do navegador.
+    limparErros();
+    var senhaVal = document.getElementById("u-senha").value;
+    var primeiroInvalido = null;
+
+    if (!payload.nome) {
+      primeiroInvalido = primeiroInvalido || marcarErro("nome", "Informe o nome.");
+    } else if (reProibidoUsuario.test(payload.nome)) {
+      primeiroInvalido = primeiroInvalido || marcarErro("nome", "O nome contém caracteres não permitidos (emojis ou símbolos inválidos).");
+    }
+
+    if (!payload.email) {
+      primeiroInvalido = primeiroInvalido || marcarErro("email", "Informe o e-mail.");
+    } else if (reProibidoUsuario.test(payload.email)) {
+      primeiroInvalido = primeiroInvalido || marcarErro("email", "O e-mail contém caracteres não permitidos.");
+    } else if (!reEmailUsuario.test(payload.email)) {
+      primeiroInvalido = primeiroInvalido || marcarErro("email", "Digite um e-mail válido.");
+    }
+
+    if (senhaVal) {
+      if (senhaVal.length < 8) {
+        primeiroInvalido = primeiroInvalido || marcarErro("senha", "A senha deve ter ao menos 8 caracteres.");
+      } else if (reProibidoUsuario.test(senhaVal)) {
+        primeiroInvalido = primeiroInvalido || marcarErro("senha", "A senha contém caracteres não permitidos (emojis ou símbolos inválidos).");
+      }
+    }
+
+    if (primeiroInvalido) {
+      primeiroInvalido.focus();
+      return;
+    }
+
     setSalvando(true);
 
     var promessa;
     if (id) {
       var novoAtivo = document.getElementById("u-ativo").checked;
       var novaSenha = document.getElementById("u-senha").value;
-      if (novaSenha && novaSenha.length < 8) {
-        toast("A senha deve ter ao menos 8 caracteres.", "erro", "Senha inválida");
-        setSalvando(false);
-        return;
-      }
       if (edicaoAtivoOriginal && !novoAtivo &&
           !window.confirm("Deseja inativar este usuário? Ele não poderá mais fazer login.")) {
         setSalvando(false);
@@ -361,7 +431,12 @@
       fecharTodos();
       tabela.ajax.reload(null, false);
     }).catch(function (err) {
-      toast(err.message, "erro", "Não foi possível salvar");
+      var campo = erroServidorParaCampo(err.message);
+      if (campo) {
+        marcarErro(campo, err.message).focus();
+      } else {
+        toast(err.message, "erro", "Não foi possível salvar");
+      }
     }).finally(function () {
       setSalvando(false);
     });

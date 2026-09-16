@@ -279,6 +279,15 @@
 .modal-field label { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .modal-field input, .modal-field select { min-width: 0; width: 100%; }
 .modal-field .hint { font-size: 12px; color: var(--ink-4); }
+/* Erro inline por campo (mesmo padrão da tela de login) */
+.modal-field input[aria-invalid="true"] { border-color: #dc2626; background: #fff; }
+.modal-field input[aria-invalid="true"]:focus { box-shadow: 0 0 0 3px rgba(220, 38, 38, .12); }
+.field-error {
+  display: block;
+  font-size: 12px; font-weight: 600; line-height: 1.35;
+  color: #b91c1c;
+}
+.field-error:empty { display: none; }
 .modal-ft {
   display: flex; justify-content: flex-end; gap: 10px;
   padding: 16px 20px; border-top: 1px solid var(--bd);

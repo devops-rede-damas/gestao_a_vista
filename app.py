@@ -23,11 +23,24 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-# Sessão do login (área de gestão). Sem SECRET_KEY o app ainda sobe para as TVs,
-# mas com chave efêmera as sessões não persistem entre reinícios — só avisamos.
-app.secret_key = os.getenv("SECRET_KEY") or secrets.token_urlsafe(32)
-if not os.getenv("SECRET_KEY"):
-    logger.warning("SECRET_KEY ausente no .env: usando chave efêmera (sessões não persistem entre reinícios).")
+# Sessão do login (área de gestão). A SECRET_KEY assina a sessão E o cookie de
+# lembrança da TV: com chave efêmera, um restart invalida o cookie e a TV cairia
+# na tela de login. Por isso, com EXIGIR_SECRET_KEY=true (produção), o boot falha
+# alto e claro se ela faltar; caso contrário, mantém o aviso e uma chave efêmera.
+_secret_key = os.getenv("SECRET_KEY")
+if _secret_key:
+    app.secret_key = _secret_key
+elif os.getenv("EXIGIR_SECRET_KEY", "false").lower() == "true":
+    raise RuntimeError(
+        "SECRET_KEY ausente com EXIGIR_SECRET_KEY=true. Defina SECRET_KEY no .env — "
+        "sem ela o cookie de lembrança da TV não sobrevive a reinícios."
+    )
+else:
+    app.secret_key = secrets.token_urlsafe(32)
+    logger.warning(
+        "SECRET_KEY ausente: usando chave efêmera. Sessões e o re-login automático "
+        "da TV NÃO sobrevivem a reinícios."
+    )
 app.config.update(
     PERMANENT_SESSION_LIFETIME=timedelta(days=int(os.getenv("SESSION_DAYS", "7"))),
     SESSION_COOKIE_HTTPONLY=True,
