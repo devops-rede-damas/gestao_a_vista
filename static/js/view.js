@@ -2,7 +2,20 @@
 // Injetado pelo backend em window.exibicao no carregamento da página.
 
 const exibicao = window.exibicao || { modo: "agregado", equipes: [] };
-export const teamsList = exibicao.equipes || [];
+
+// Equipes "conhecidas" do setor, vindas do backend (banco descoberto, com fallback para
+// as explícitas do setores.json). Entram no rodízio mesmo zeradas — assim o gestor vê a
+// equipe sem ticket no mural.
+const equipesConhecidas = exibicao.equipes || [];
+
+// Equipes "vivas": as que aparecem nos tickets carregados. Garante que uma equipe nova
+// (ainda fora da lista conhecida) não fique de fora do rodízio, evitando tickets órfãos.
+const equipesVivas = [...new Set((window.tickets || []).map(t => t.ownerTeam).filter(Boolean))];
+
+// Lista do rodízio: união (conhecidas ∪ vivas), ordenada por nome (rodízio estável).
+export const teamsList = [...new Set([...equipesConhecidas, ...equipesVivas])]
+    .sort((a, b) => a.localeCompare(b, "pt-BR"));
+
 // "por_equipe" faz a tela alternar cada equipe do setor; caso contrário, agrega tudo (padrão).
 export const porEquipe = exibicao.modo === "por_equipe" && teamsList.length > 1;
 

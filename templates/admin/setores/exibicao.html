@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Painéis — Gestão à Vista</title>
+  <title>Modo de exibição — Gestão à Vista</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -30,9 +30,9 @@
         <div class="admin-titlebar">
           <h1 class="admin-title">Painel Admin</h1>
           <span class="admin-title-sep" aria-hidden="true">·</span>
-          <span class="admin-subtitle">Painéis</span>
+          <span class="admin-subtitle">Modo de exibição</span>
         </div>
-        <p class="admin-desc">Abra o painel de qualquer setor. Cada painel abre em uma nova aba.</p>
+        <p class="admin-desc">Escolha como o painel de cada setor é exibido: todas as equipes juntas ou uma equipe por vez (rodízio).</p>
       </div>
     </div>
 
@@ -48,16 +48,28 @@
     </nav>
 
     {% if setores %}
-    <div class="paineis-grid">
+    <div class="exib-list">
       {% for s in setores %}
-      <a class="painel-card" href="{{ url_for('painel', setor=s.chave) }}" target="_blank" rel="noopener">
-        <span class="painel-card-head">
-          <span class="painel-card-nome">{{ s.nome }}</span>
-          <svg class="painel-card-ext" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-        </span>
-        <span class="painel-card-chave">{{ s.chave }}</span>
-        <span class="painel-card-cta">Abrir painel</span>
-      </a>
+      <div class="exib-item" data-setor="{{ s.chave }}">
+        <div class="exib-info">
+          <span class="exib-nome">{{ s.nome }}</span>
+          <span class="exib-meta">
+            <span class="exib-qtd">{{ s.qtd_equipes }}</span> <span class="exib-qtd-rot">equipe{{ 's' if s.qtd_equipes != 1 else '' }}</span> ·
+            <span class="exib-modo-label">{{ 'Uma equipe por vez' if s.modo == 'por_equipe' else 'Todas as equipes juntas' }}</span>
+          </span>
+        </div>
+        <div class="exib-actions">
+          <button type="button" class="btn-atualizar-equipes" data-setor="{{ s.chave }}" title="Descobre as equipes deste setor na API do Movidesk">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Atualizar equipes
+          </button>
+          <label class="switch">
+            <input type="checkbox" class="exib-toggle" data-setor="{{ s.chave }}"{% if s.modo == 'por_equipe' %} checked{% endif %}>
+            <span class="switch-track"></span>
+            <span class="switch-label">Por equipe</span>
+          </label>
+        </div>
+      </div>
       {% endfor %}
     </div>
     {% else %}
@@ -65,5 +77,8 @@
     {% endif %}
   </div>
 
+  <div class="toast-wrap" id="toast-wrap"></div>
+
+  <script src="{{ url_for('static', filename='js/admin-setores-exibicao.js') }}" type="module"></script>
 </body>
 </html>
