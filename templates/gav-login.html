@@ -78,27 +78,32 @@
                 </div>
                 {% endif %}
 
-                <form method="post" action="{{ url_for('auth.login') }}">
+                <form id="form-login" method="post" action="{{ url_for('auth.login') }}" novalidate>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <div class="field">
                         <label for="email">E-mail</label>
                         <div class="input-wrap">
                             <input id="email" type="email" name="email" placeholder="seu.email@rededamas.com.br"
-                                   autocomplete="username" required>
+                                   value="{{ email or '' }}" maxlength="254" aria-describedby="err-email"
+                                   autocomplete="username" required {% if not email %}autofocus{% endif %}>
                         </div>
+                        <span class="field-error" id="err-email" aria-live="polite"></span>
                     </div>
 
                     <div class="field">
                         <label for="senha">Senha</label>
                         <div class="input-wrap">
                             <input id="senha" type="password" name="senha" placeholder="Sua senha"
-                                   autocomplete="current-password" required>
+                                   maxlength="128" aria-describedby="err-senha"
+                                   autocomplete="current-password" required {% if email %}autofocus{% endif %}>
                             <button type="button" class="input-toggle" id="toggle-senha" aria-label="Mostrar senha">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg>
                             </button>
                         </div>
+                        <span class="field-error" id="err-senha" aria-live="polite"></span>
                     </div>
 
-                    <button type="submit" class="login-btn">
+                    <button type="submit" class="login-btn" id="btn-entrar">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
                         <span>Entrar</span>
                     </button>
@@ -122,6 +127,71 @@
                 var mostrando = senha.type === "text";
                 senha.type = mostrando ? "password" : "text";
                 toggle.setAttribute("aria-label", mostrando ? "Mostrar senha" : "Ocultar senha");
+            });
+        })();
+
+        // Validação dos campos (mensagens PT-BR) + estado de envio anti duplo-clique.
+        (function () {
+            var form = document.getElementById("form-login");
+            var btn = document.getElementById("btn-entrar");
+            var email = document.getElementById("email");
+            var senha = document.getElementById("senha");
+            var errEmail = document.getElementById("err-email");
+            var errSenha = document.getElementById("err-senha");
+            if (!form || !btn || !email || !senha) return;
+
+            var reEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            // Emojis/pictogramas e caracteres de controle/invisíveis (espelha o backend).
+            var reProibido = /[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060\uFEFF\u2600-\u27BF\u2B00-\u2BFF\uFE00-\uFE0F]|[\uD800-\uDBFF][\uDC00-\uDFFF]/;
+
+            function marcarErro(campo, span, msg) {
+                campo.setAttribute("aria-invalid", "true");
+                if (span) span.textContent = msg;
+            }
+            function limparErro(campo, span) {
+                campo.removeAttribute("aria-invalid");
+                if (span) span.textContent = "";
+            }
+            // Limpa o erro do campo assim que o usuário corrige.
+            email.addEventListener("input", function () { limparErro(email, errEmail); });
+            senha.addEventListener("input", function () { limparErro(senha, errSenha); });
+
+            form.addEventListener("submit", function (e) {
+                var primeiroInvalido = null;
+                var emailVal = email.value.trim();
+
+                if (!emailVal) {
+                    marcarErro(email, errEmail, "Informe o seu e-mail.");
+                    primeiroInvalido = primeiroInvalido || email;
+                } else if (reProibido.test(emailVal)) {
+                    marcarErro(email, errEmail, "O e-mail contém caracteres não permitidos.");
+                    primeiroInvalido = primeiroInvalido || email;
+                } else if (!reEmail.test(emailVal)) {
+                    marcarErro(email, errEmail, "Digite um e-mail válido.");
+                    primeiroInvalido = primeiroInvalido || email;
+                } else {
+                    limparErro(email, errEmail);
+                }
+
+                if (!senha.value) {
+                    marcarErro(senha, errSenha, "Informe a sua senha.");
+                    primeiroInvalido = primeiroInvalido || senha;
+                } else if (reProibido.test(senha.value)) {
+                    marcarErro(senha, errSenha, "A senha contém caracteres não permitidos.");
+                    primeiroInvalido = primeiroInvalido || senha;
+                } else {
+                    limparErro(senha, errSenha);
+                }
+
+                if (primeiroInvalido) {
+                    e.preventDefault();
+                    primeiroInvalido.focus();
+                    return;
+                }
+
+                // Válido: mostra o estado de envio (o backend faz a validação final).
+                btn.disabled = true;
+                btn.innerHTML = '<span class="login-spinner"></span><span>Entrando…</span>';
             });
         })();
     </script>

@@ -201,6 +201,20 @@
   box-shadow: 0 0 0 3px rgba(12, 119, 173, .10);
 }
 .input-wrap:has(.input-toggle) input { padding-right: 44px; }
+.field input[aria-invalid="true"] {
+  border-color: #dc2626;
+  background: #fff;
+}
+.field input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, .12);
+}
+.field-error {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px; font-weight: 600; line-height: 1.35;
+  color: #b91c1c;
+}
+.field-error:empty { display: none; }
 .input-toggle {
   position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
   background: transparent; border: none; cursor: pointer;
@@ -230,6 +244,14 @@
   box-shadow: 0 5px 14px rgba(0, 81, 125, .18);
 }
 .login-btn:active { transform: translateY(1px); }
+.login-btn:disabled { opacity: .8; cursor: default; box-shadow: none; }
+.login-spinner {
+  display: inline-block; width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, .45); border-top-color: #fff;
+  animation: login-spin .6s linear infinite;
+}
+@keyframes login-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .login-spinner { animation: none; } }
 
 /* ── Rodapé ───────────────────────────────────────────────────── */
 .login-footer {
