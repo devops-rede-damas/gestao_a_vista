@@ -15,7 +15,7 @@ import secrets
 import unicodedata
 
 import requests
-from flask import Blueprint, abort, jsonify, render_template, request, url_for
+from flask import Blueprint, abort, jsonify, render_template, request, session, url_for
 
 from core.auth import hash_senha
 from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
@@ -27,6 +27,13 @@ from core.colaboradores import (
     definir_nome_exibicao,
 )
 from core.sectors import available_sectors, load_config, sector_display, setores_de
+from core.setores_config import (
+    MODOS_VALIDOS,
+    SetorConfigError,
+    carregar_equipes,
+    carregar_modos,
+    definir_modo,
+)
 from core.usuarios import (
     atualizar_usuario,
     buscar_por_email,
@@ -38,6 +45,7 @@ from core.usuarios import (
 )
 from core.validacao import contem_caractere_proibido
 from core.webauth import papel_obrigatorio
+from services.descoberta_equipes import descobrir_setor
 from services.movidesk_api import get_open_tickets_owners
 
 logger = logging.getLogger(__name__)
@@ -146,7 +154,29 @@ def setores_paineis():
         ({"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()),
         key=lambda d: _chave_ordenacao(d["nome"]),
     )
-    return render_template("admin/setores/paineis.html", setores=setores, active="setores")
+    return render_template("admin/setores/paineis.html", setores=setores, active="setores", subativo="paineis")
+
+
+@admin_bp.route("/admin/setores/exibicao")
+@papel_obrigatorio("ADM")
+def setores_exibicao():
+    """Configura o modo de exibição de cada setor (agregado x por_equipe)."""
+    overrides = carregar_modos()
+    equipes_por_setor = carregar_equipes()
+    setores = []
+    for s in available_sectors():
+        base = sector_display(s)
+        padrao = base["modo"]
+        conhecidas = equipes_por_setor.get(s) or base["equipes"]
+        setores.append({
+            "chave": s,
+            "nome": base["nome"],
+            "modo": overrides.get(s, padrao),
+            "padrao": padrao,
+            "qtd_equipes": len(conhecidas),
+        })
+    setores.sort(key=lambda d: _chave_ordenacao(d["nome"]))
+    return render_template("admin/setores/exibicao.html", setores=setores, active="setores", subativo="exibicao")
 
 
 # ── API (JSON) ─────────────────────────────────────────────────────────────────
@@ -360,6 +390,47 @@ def api_nome(owner_id):
         logger.warning("Falha ao definir nome de %s: %s", owner_id, exc)
         return jsonify({"erro": "Não foi possível salvar."}), 503
     return jsonify(conf)
+
+
+@admin_bp.route("/admin/api/setores/<setor>/exibicao", methods=["PUT"])
+@papel_obrigatorio("ADM")
+def api_setor_exibicao(setor):
+    """Define o modo de exibição do setor (agregado x por_equipe).
+
+    Grava só quando difere do padrão do setores.json (a tabela guarda exceções).
+    """
+    if setor not in available_sectors():
+        abort(404)
+    dados = request.get_json(silent=True) or {}
+    modo = dados.get("exibicao")
+    if modo not in MODOS_VALIDOS:
+        return jsonify({"erro": "Modo inválido."}), 400
+    try:
+        definir_modo(setor, modo, padrao=sector_display(setor)["modo"], por=(session.get("usuario") or {}).get("email"))
+    except SetorConfigError as exc:
+        logger.warning("Falha ao definir exibição de %s: %s", setor, exc)
+        return jsonify({"erro": "Não foi possível salvar."}), 503
+    return jsonify({"setor": setor, "exibicao": modo})
+
+
+@admin_bp.route("/admin/api/setores/<setor>/equipes/atualizar", methods=["POST"])
+@papel_obrigatorio("ADM")
+def api_setor_equipes_atualizar(setor):
+    """Descobre as equipes do setor na API (Movidesk) e regrava em setor_equipes.
+
+    Disparo manual do botão "Atualizar equipes" (origem='admin'). Mesma lógica do robô.
+    """
+    if setor not in available_sectors():
+        abort(404)
+    try:
+        equipes = descobrir_setor(setor, origem="admin")
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Falha ao descobrir equipes de %s: %s", setor, exc)
+        return jsonify({"erro": "Não foi possível consultar o Movidesk."}), 503
+    except SetorConfigError as exc:
+        logger.warning("Falha ao gravar equipes de %s: %s", setor, exc)
+        return jsonify({"erro": "Não foi possível salvar."}), 503
+    return jsonify({"setor": setor, "equipes": equipes, "qtd": len(equipes)})
 
 
 @admin_bp.route("/admin/api/responsaveis/<owner_id>/foto", methods=["POST"])
