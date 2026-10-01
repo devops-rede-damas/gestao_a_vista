@@ -388,4 +388,28 @@ formNome.addEventListener("submit", async (e) => {
   }
 });
 
+// Botao "Sincronizar colaboradores": busca do Movidesk, recarrega a lista.
+const btnSync = document.getElementById("btn-sincronizar");
+if (btnSync) {
+  btnSync.addEventListener("click", async () => {
+    btnSync.disabled = true;
+    btnSync.classList.add("carregando");
+    try {
+      const resp = await fetch("/admin/api/colaboradores/sincronizar", { method: "POST" });
+      const dados = await resp.json().catch(() => ({}));
+      if (!resp.ok) throw new Error(dados.erro || "Erro ao sincronizar.");
+      const n = dados.sincronizados || 0;
+      const elUltima = document.getElementById("ultima-sync");
+      if (elUltima && dados.ultima_sync) elUltima.textContent = "Sincronizado em " + dados.ultima_sync;
+      await carregar();
+      toast(`${n} colaborador${n !== 1 ? "es" : ""} sincronizado${n !== 1 ? "s" : ""}.`, "ok");
+    } catch (e) {
+      toast(e.message, "erro", "Não sincronizou");
+    } finally {
+      btnSync.disabled = false;
+      btnSync.classList.remove("carregando");
+    }
+  });
+}
+
 carregar();

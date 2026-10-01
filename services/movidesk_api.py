@@ -9,6 +9,9 @@ from core.sectors import build_filter, build_day_filter, build_open_filter
 load_dotenv()
 
 BASE_URL = os.getenv("MOVIDESK_BASE_URL", "https://api.movidesk.com/public/v1/tickets")
+# Raiz da API publica (ex.: https://api.movidesk.com/public/v1), derivada de BASE_URL
+# (que aponta para .../tickets). O /persons compartilha a mesma raiz e o mesmo token.
+PERSONS_URL = f"{BASE_URL.rsplit('/', 1)[0]}/persons"
 
 
 def get_tickets(setor="ti"):
@@ -83,6 +86,39 @@ def get_open_tickets_owners(session=None, page_size=1000, max_pages=20):
     for pagina in range(max_pages):
         params = {**base, "$top": page_size, "$skip": pagina * page_size}
         response = http.get(BASE_URL, params=params, timeout=60)
+        response.raise_for_status()
+        lote = response.json()
+        coletados.extend(lote)
+        if len(lote) < page_size:
+            break
+    return coletados
+
+
+# $select do agente: id + nome + situacao (ativo) + equipes. profileType 3 = Agente
+# (1/2 sao clientes). O id e o mesmo owner.id dos tickets, entao casa com a config atual.
+_AGENTES_SELECT = "id,businessName,isActive,teams"
+_PROFILE_TYPE_AGENTE = 3
+
+
+def get_agentes(session=None, page_size=1000, max_pages=10):
+    """Busca, com paginacao, os AGENTES (colaboradores) cadastrados no Movidesk.
+
+    Read-only. Consome /persons filtrando profileType eq 3 (agentes; clientes ficam de
+    fora) e traz id, businessName, isActive e teams (lista de nomes de equipe). Devolve
+    TODOS os agentes — ativos e inativos —; filtrar por situacao/equipe e responsabilidade
+    da camada de dominio (core.colaboradores_movidesk). Paginacao via $skip, no mesmo
+    padrao de get_open_tickets_owners. <session> opcional reaproveita a conexao.
+    """
+    http = session or requests
+    base = {
+        "token": os.getenv("MOVIDESK_TOKEN"),
+        "$select": _AGENTES_SELECT,
+        "$filter": f"profileType eq {_PROFILE_TYPE_AGENTE}",
+    }
+    coletados = []
+    for pagina in range(max_pages):
+        params = {**base, "$top": page_size, "$skip": pagina * page_size}
+        response = http.get(PERSONS_URL, params=params, timeout=60)
         response.raise_for_status()
         lote = response.json()
         coletados.extend(lote)
