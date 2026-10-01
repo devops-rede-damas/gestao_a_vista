@@ -40,12 +40,13 @@ def _setores_do_agente(agente, cfg):
     return sorted(setores)
 
 
-def agentes_dos_setores(agentes, cfg=None, apenas_ativos=True):
+def agentes_dos_setores(agentes, cfg=None, apenas_ativos=False):
     """Filtra os agentes que servem a algum setor nosso e anexa as chaves de setor.
 
     <agentes>: saida de services.movidesk_api.get_agentes (id, businessName, isActive,
-    teams). Descarta quem nao casa em nenhum setor e, por padrao, os inativos. Retorna
-    lista ORDENADA por nome:
+    teams). Descarta quem nao casa em nenhum setor. Por PADRAO inclui inativos (ativo=0),
+    para o cadastro ser uma replica fiel do Movidesk (a tela filtra os ativos na leitura);
+    passe apenas_ativos=True para trazer so os ativos. Retorna lista ORDENADA por nome:
         [{"id", "nome", "ativo", "equipes": [...], "setores": [...]}]
     """
     cfg = cfg or load_config()
@@ -111,10 +112,11 @@ def carregar_cadastro():
 def sincronizar(colaboradores):
     """Espelha a lista de colaboradores (dominio) na tabela e reconcilia ausentes.
 
-    <colaboradores>: saida de agentes_dos_setores (id, nome, equipes, ...). Faz UPSERT das
-    colunas de ESPELHO (nome, ativo=1, equipes, ultima_sync), preservando as de CONFIG.
-    Depois marca ativo=0 em quem esta no banco mas NAO veio na lista (saiu do escopo ou
-    incativou) \u2014 sem deletar. Tudo numa transacao. Retorna {"sincronizados", "inativados"}.
+    <colaboradores>: saida de agentes_dos_setores (id, nome, ativo, equipes, ...). Faz UPSERT
+    das colunas de ESPELHO (nome, ativo [= isActive do agente], equipes, ultima_sync),
+    preservando as de CONFIG. Depois marca ativo=0 em quem esta ATIVO no banco mas NAO veio
+    na lista (sumiu do Movidesk) — sem deletar. Tudo numa transacao. Retorna
+    {"sincronizados", "inativados"}.
 
     Trava de seguranca: lista vazia NAO reconcilia (evita inativar todo mundo se a origem
     falhar). Erros de banco viram ColaboradorMovideskError.
@@ -125,7 +127,8 @@ def sincronizar(colaboradores):
 
     agora = datetime.now()
     valores = [
-        (str(c["id"]), c.get("nome") or "", json.dumps(c.get("equipes") or [], ensure_ascii=False), agora)
+        (str(c["id"]), c.get("nome") or "", 1 if c.get("ativo") else 0,
+         json.dumps(c.get("equipes") or [], ensure_ascii=False), agora)
         for c in itens
     ]
     ids = [v[0] for v in valores]
@@ -138,7 +141,7 @@ def sincronizar(colaboradores):
         with con.cursor() as cursor:
             cursor.executemany(
                 f"INSERT INTO {_TABELA} (id, nome, ativo, equipes, ultima_sync) "
-                "VALUES (%s, %s, 1, %s, %s) "
+                "VALUES (%s, %s, %s, %s, %s) "
                 "ON DUPLICATE KEY UPDATE nome = VALUES(nome), ativo = VALUES(ativo), "
                 "equipes = VALUES(equipes), ultima_sync = VALUES(ultima_sync)",
                 valores,
@@ -228,3 +231,59 @@ def aplicar_migracao_config(plano):
     finally:
         con.close()
     return {"fotos": len(fotos), "config": len(config)}
+
+
+# ── Escrita pontual da config pelo admin (Etapa 4) ───────────────────────────────
+_COLUNAS_CONFIG = ("exibir", "nome_exibicao", "foto_arquivo")
+
+
+def atualizar_config(colaborador_id, **campos):
+    """Atualiza colunas de CONFIG (exibir/nome_exibicao/foto_arquivo) de UMA linha.
+
+    So aceita as colunas conhecidas (whitelist _COLUNAS_CONFIG) — o nome da coluna nunca
+    vem do usuario, eliminando risco de SQL injection; os valores vao parametrizados.
+    Atualiza a linha existente; se o id ainda nao esta no cadastro (ex.: agente com ticket
+    aberto ainda nao sincronizado) e um NO-OP (0 linhas). Nao toca nas colunas de espelho.
+    Retorna o nº de linhas afetadas. Erros de banco viram ColaboradorMovideskError.
+    """
+    campos = {k: v for k, v in campos.items() if k in _COLUNAS_CONFIG}
+    if not campos:
+        return 0
+    if "exibir" in campos:
+        campos["exibir"] = 1 if campos["exibir"] else 0
+    colunas = list(campos)
+    sets = ", ".join(f"{coluna} = %s" for coluna in colunas)
+    valores = [campos[coluna] for coluna in colunas] + [str(colaborador_id)]
+    try:
+        con = get_connection()
+    except DbConfigError as exc:
+        raise ColaboradorMovideskError(str(exc)) from exc
+    try:
+        con.begin()
+        with con.cursor() as cursor:
+            cursor.execute(f"UPDATE {_TABELA} SET {sets} WHERE id = %s", valores)
+            afetadas = cursor.rowcount
+        con.commit()
+    except pymysql.MySQLError as exc:
+        con.rollback()
+        raise ColaboradorMovideskError(f"Falha ao atualizar config no banco: {exc}") from exc
+    finally:
+        con.close()
+    return afetadas
+
+
+def ultima_sincronizacao():
+    """Data/hora da ultima sincronizacao (MAX ultima_sync) ou None. Tolerante -> None."""
+    try:
+        con = get_connection()
+    except DbConfigError:
+        return None
+    try:
+        with con.cursor() as cursor:
+            cursor.execute(f"SELECT MAX(ultima_sync) AS ultima FROM {_TABELA}")
+            row = cursor.fetchone()
+    except pymysql.MySQLError:
+        return None
+    finally:
+        con.close()
+    return row["ultima"] if row else None

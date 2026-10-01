@@ -18,13 +18,19 @@ import requests
 from flask import Blueprint, abort, jsonify, render_template, request, session, url_for
 
 from core.auth import hash_senha
-from core.avatars import AvatarConfigError, AvatarInvalido, listar_responsaveis, remover_foto, salvar_foto
+from core.avatars import AvatarConfigError, AvatarInvalido, remover_foto, salvar_foto
 from core.colaboradores import (
     ColaboradorConfigError,
-    carregar_config as carregar_colaboradores,
-    config_de,
     definir_exibir,
     definir_nome_exibicao,
+)
+from core.colaboradores_movidesk import (
+    ColaboradorMovideskError,
+    agentes_dos_setores,
+    atualizar_config,
+    carregar_cadastro,
+    sincronizar,
+    ultima_sincronizacao,
 )
 from core.sectors import available_sectors, load_config, sector_display, setores_de
 from core.setores_config import (
@@ -46,7 +52,7 @@ from core.usuarios import (
 from core.validacao import contem_caractere_proibido
 from core.webauth import papel_obrigatorio
 from services.descoberta_equipes import descobrir_setor
-from services.movidesk_api import get_open_tickets_owners
+from services.movidesk_api import get_agentes, get_open_tickets_owners
 
 logger = logging.getLogger(__name__)
 
@@ -143,7 +149,9 @@ def usuarios():
 def colaboradores():
     """Tela de gestão dos colaboradores (fotos dos responsáveis pelos tickets)."""
     setores = [{"chave": s, "nome": sector_display(s)["nome"]} for s in available_sectors()]
-    return render_template("admin/colaboradores.html", setores=setores, active="colaboradores")
+    ultima = ultima_sincronizacao()
+    ultima_fmt = ultima.strftime("%d/%m/%Y %H:%M") if ultima else None
+    return render_template("admin/colaboradores.html", setores=setores, active="colaboradores", ultima_sync=ultima_fmt)
 
 
 @admin_bp.route("/admin/setores/paineis")
@@ -338,29 +346,82 @@ def _foto_url(arquivo):
     return url_for("static", filename=f"avatars/{arquivo}") if arquivo else None
 
 
+def _setores_de_equipes(equipes, nome, cfg):
+    """Chaves de setor de um colaborador, unindo o mapeamento de cada equipe dele."""
+    setores = set()
+    for equipe in equipes or []:
+        setores.update(setores_de(equipe, nome, cfg))
+    return sorted(setores)
+
+
+def _espelhar_na_tabela(owner_id, **campos):
+    """Espelha a config na tabela nova (melhor-esforço) além da fonte legada.
+
+    A fonte legada é a autoritativa para o painel/TV; se a tabela nova falhar, loga e
+    segue — a ação do admin não é derrubada. Dual-write transitório até o cutover do painel.
+    """
+    try:
+        atualizar_config(owner_id, **campos)
+    except ColaboradorMovideskError as exc:
+        logger.warning("Config não espelhada na tabela nova p/ %s (%s): %s", owner_id, campos, exc)
+
+
 @admin_bp.route("/admin/api/responsaveis", methods=["GET"])
 @papel_obrigatorio("ADM")
 def api_responsaveis():
-    """Lista os responsáveis com ticket aberto + a foto atual (ou None)."""
+    """Lista os colaboradores ATIVOS + os INATIVOS que ainda têm chamado aberto.
+
+    A fonte é o cadastro (tabela nova). Um inativo só entra se ainda tiver ticket aberto no
+    Movidesk — para não sumir com quem tem pendência. Se o Movidesk falhar, mostra só os
+    ativos (degrada com segurança).
+    """
+    cfg = load_config()
     try:
         tickets = get_open_tickets_owners()
+        ids_com_ticket = {str((t.get("owner") or {}).get("id")) for t in tickets}
     except (requests.RequestException, ValueError) as exc:
-        logger.warning("Falha ao listar responsáveis: %s", exc)
+        logger.warning("Falha ao consultar tickets abertos: %s", exc)
+        ids_com_ticket = set()
+    resultado = []
+    for colaborador in carregar_cadastro():
+        if not (colaborador.get("ativo") or colaborador["id"] in ids_com_ticket):
+            continue
+        nome = colaborador["nome"]
+        resultado.append({
+            "id": colaborador["id"],
+            "nome": nome,
+            "equipes": colaborador.get("equipes") or [],
+            "setores": _setores_de_equipes(colaborador.get("equipes"), nome, cfg),
+            "arquivo": colaborador.get("foto_arquivo"),
+            "foto_url": _foto_url(colaborador.get("foto_arquivo")),
+            "exibir": colaborador.get("exibir", True),
+            "nome_exibicao": colaborador.get("nome_exibicao"),
+        })
+    resultado.sort(key=lambda r: (r["nome"] or "").lower())
+    return jsonify(resultado)
+
+
+@admin_bp.route("/admin/api/colaboradores/sincronizar", methods=["POST"])
+@papel_obrigatorio("ADM")
+def api_colaboradores_sincronizar():
+    """Sincroniza o cadastro com o Movidesk (disparo manual do botão "Sincronizar
+    colaboradores"). Busca os agentes (/persons), recorta pelos nossos setores e espelha no
+    banco: atualiza quem veio, aposenta (ativo=0) quem saiu — sem apagar nem tocar na config.
+    """
+    try:
+        colaboradores = agentes_dos_setores(get_agentes())
+    except (requests.RequestException, ValueError) as exc:
+        logger.warning("Falha ao buscar agentes no Movidesk: %s", exc)
         return jsonify({"erro": "Não foi possível consultar o Movidesk."}), 503
-    itens = listar_responsaveis(tickets)
-    cfg = load_config()
-    colab = carregar_colaboradores()
-    for item in itens:
-        nome = item.get("nome")
-        setores = set()
-        for equipe in item.get("equipes") or []:
-            setores.update(setores_de(equipe, nome, cfg))
-        item["setores"] = sorted(setores)
-        item["foto_url"] = _foto_url(item.get("arquivo"))
-        conf = config_de(item.get("id"), colab)
-        item["exibir"] = conf["exibir"]
-        item["nome_exibicao"] = conf["nome_exibicao"]
-    return jsonify(itens)
+    try:
+        resultado = sincronizar(colaboradores)
+    except ColaboradorMovideskError as exc:
+        logger.warning("Falha ao sincronizar colaboradores: %s", exc)
+        return jsonify({"erro": "Não foi possível salvar."}), 503
+    logger.info("ADM sincronizou colaboradores: %s", resultado)
+    ultima = ultima_sincronizacao()
+    resultado["ultima_sync"] = ultima.strftime("%d/%m/%Y %H:%M") if ultima else None
+    return jsonify(resultado)
 
 
 @admin_bp.route("/admin/api/responsaveis/<owner_id>/exibir", methods=["PUT"])
@@ -373,6 +434,7 @@ def api_exibir(owner_id):
     except ColaboradorConfigError as exc:
         logger.warning("Falha ao definir exibir de %s: %s", owner_id, exc)
         return jsonify({"erro": "Não foi possível salvar."}), 503
+    _espelhar_na_tabela(owner_id, exibir=conf["exibir"])
     return jsonify(conf)
 
 
@@ -389,6 +451,7 @@ def api_nome(owner_id):
     except ColaboradorConfigError as exc:
         logger.warning("Falha ao definir nome de %s: %s", owner_id, exc)
         return jsonify({"erro": "Não foi possível salvar."}), 503
+    _espelhar_na_tabela(owner_id, nome_exibicao=conf["nome_exibicao"])
     return jsonify(conf)
 
 
@@ -447,6 +510,7 @@ def api_foto_upload(owner_id):
         logger.warning("Falha ao salvar foto de %s: %s", owner_id, exc)
         return jsonify({"erro": "Não foi possível salvar a imagem."}), 500
     logger.info("ADM enviou foto do responsável %s (%s)", owner_id, nome)
+    _espelhar_na_tabela(owner_id, foto_arquivo=nome)
     return jsonify({"id": str(owner_id), "arquivo": nome, "foto_url": _foto_url(nome)})
 
 
@@ -458,4 +522,5 @@ def api_foto_remover(owner_id):
     except AvatarInvalido as exc:
         return jsonify({"erro": str(exc)}), 400
     logger.info("ADM removeu a foto do responsável %s (havia=%s)", owner_id, removido)
+    _espelhar_na_tabela(owner_id, foto_arquivo=None)
     return jsonify({"id": str(owner_id), "removido": removido})
