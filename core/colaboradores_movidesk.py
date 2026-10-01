@@ -156,3 +156,75 @@ def sincronizar(colaboradores):
     finally:
         con.close()
     return {"sincronizados": len(itens), "inativados": inativados}
+
+
+# ── Migracao da config legada -> colunas de config (Etapa 3) ─────────────────────
+def planejar_migracao_config(cadastro, fotos, config):
+    """Planeja (PURO, sem banco) o backfill das colunas de CONFIG a partir das fontes
+    legadas, so para ids que JA existem no cadastro.
+
+    <cadastro>: saida de carregar_cadastro() (itens com 'id'). <fotos>: {id: arquivo} do
+    avatars.json. <config>: {id: {exibir, nome_exibicao}} da colaboradores_config. Ids das
+    fontes legadas sem linha no cadastro viram 'orfaos' — nao se perdem (seguem nas fontes
+    legadas), apenas sao reportados. Retorna {fotos, config, orfaos_foto, orfaos_config,
+    resumo}, onde fotos/config sao os subconjuntos APLICAVEIS (ids presentes no cadastro).
+    """
+    ids = {c["id"] for c in cadastro or []}
+    fotos = fotos or {}
+    config = config or {}
+    fotos_aplicaveis = {i: a for i, a in fotos.items() if i in ids}
+    config_aplicavel = {i: c for i, c in config.items() if i in ids}
+    orfaos_foto = sorted(i for i in fotos if i not in ids)
+    orfaos_config = sorted(i for i in config if i not in ids)
+    return {
+        "fotos": fotos_aplicaveis,
+        "config": config_aplicavel,
+        "orfaos_foto": orfaos_foto,
+        "orfaos_config": orfaos_config,
+        "resumo": {
+            "fotos_legadas": len(fotos),
+            "config_legadas": len(config),
+            "fotos_a_migrar": len(fotos_aplicaveis),
+            "config_a_migrar": len(config_aplicavel),
+            "orfaos_foto": len(orfaos_foto),
+            "orfaos_config": len(orfaos_config),
+        },
+    }
+
+
+def aplicar_migracao_config(plano):
+    """Aplica o <plano> de planejar_migracao_config nas colunas de CONFIG da tabela.
+
+    Escreve SOMENTE foto_arquivo/nome_exibicao/exibir (nunca as de espelho), nos ids ja
+    existentes, numa transacao. Idempotente: reaplicar os mesmos valores legados nao muda
+    o resultado. Retorna {"fotos", "config"} com a contagem gravada. Erros de banco viram
+    ColaboradorMovideskError.
+    """
+    fotos = plano.get("fotos") or {}
+    config = plano.get("config") or {}
+    if not fotos and not config:
+        return {"fotos": 0, "config": 0}
+    try:
+        con = get_connection()
+    except DbConfigError as exc:
+        raise ColaboradorMovideskError(str(exc)) from exc
+    try:
+        con.begin()
+        with con.cursor() as cursor:
+            if fotos:
+                cursor.executemany(
+                    f"UPDATE {_TABELA} SET foto_arquivo = %s WHERE id = %s",
+                    [(arquivo, i) for i, arquivo in fotos.items()],
+                )
+            if config:
+                cursor.executemany(
+                    f"UPDATE {_TABELA} SET nome_exibicao = %s, exibir = %s WHERE id = %s",
+                    [(c.get("nome_exibicao"), 1 if c.get("exibir") else 0, i) for i, c in config.items()],
+                )
+        con.commit()
+    except pymysql.MySQLError as exc:
+        con.rollback()
+        raise ColaboradorMovideskError(f"Falha ao migrar config no banco: {exc}") from exc
+    finally:
+        con.close()
+    return {"fotos": len(fotos), "config": len(config)}
