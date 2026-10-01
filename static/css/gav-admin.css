@@ -175,16 +175,21 @@
 .exib-meta { font-size: 12px; color: var(--ink-4); }
 .exib-modo-label { font-weight: 600; color: var(--brand-dark); }
 .exib-actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
-.btn-atualizar-equipes {
+.btn-atualizar-equipes,
+.btn-sincronizar {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 7px 12px; font-size: 12px; font-weight: 600;
   color: var(--ink-2); background: #fff; border: 1px solid var(--bd);
   border-radius: 8px; cursor: pointer;
 }
-.btn-atualizar-equipes:hover { border-color: var(--brand); color: var(--brand-dark); }
-.btn-atualizar-equipes:disabled { opacity: .6; cursor: default; }
-.btn-atualizar-equipes svg { width: 14px; height: 14px; }
-.btn-atualizar-equipes.carregando svg { animation: girar 1s linear infinite; }
+.btn-atualizar-equipes:hover,
+.btn-sincronizar:hover { border-color: var(--brand); color: var(--brand-dark); }
+.btn-atualizar-equipes:disabled,
+.btn-sincronizar:disabled { opacity: .6; cursor: default; }
+.btn-atualizar-equipes svg,
+.btn-sincronizar svg { width: 14px; height: 14px; }
+.btn-atualizar-equipes.carregando svg,
+.btn-sincronizar.carregando svg { animation: girar 1s linear infinite; }
 @keyframes girar { to { transform: rotate(360deg); } }
 
 /* Chips de status e papel */
@@ -578,4 +583,73 @@
   /* Menu na barra quebra para uma 2ª linha no celular */
   .admin-topbar { flex-wrap: wrap; }
   .admin-nav { margin-left: 0; order: 3; width: 100%; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PILOTO VISUAL — alinhamento ao Portal Admin (Rede Damas)
+   Escopo EXCLUSIVO da tela de Colaboradores (.admin-page--colaboradores).
+   Só refina o que já existe; Usuários/Setores e a TV ficam intactos.
+   Reversível: basta remover a classe no <body> e este bloco.
+   ═══════════════════════════════════════════════════════════════ */
+.admin-page--colaboradores {
+  --ink-5:       #cbd5e1;  /* faltava: dá cor ao separador "·" do título */
+  --radius:      14px;
+  --radius-sm:   10px;
+  --shadow-lift: 0 4px 16px rgba(15, 23, 42, .06), 0 1px 3px rgba(15, 23, 42, .04);
+  --focus-ring:  #60a5fa;
+}
+
+/* Botões: micro-afunda no clique e anel de foco acessível (padrão Portal) */
+.admin-page--colaboradores .btn {
+  border-radius: var(--radius-sm);
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s, transform .06s;
+}
+.admin-page--colaboradores .btn:active:not(:disabled) { transform: translateY(1px); }
+.admin-page--colaboradores .btn:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+/* Primary na cor-marca mais firme (brand-dark), com leve elevação no hover */
+.admin-page--colaboradores .btn-primary {
+  background: var(--brand-dark); border-color: var(--brand-dark);
+  box-shadow: 0 1px 2px rgba(0, 81, 125, .25);
+}
+.admin-page--colaboradores .btn-primary:hover:not(:disabled) {
+  background: var(--brand-darker); box-shadow: 0 4px 12px rgba(0, 81, 125, .28);
+}
+
+/* Botão "Sincronizar colaboradores": hover-lift no idioma do Portal */
+.admin-page--colaboradores .btn-sincronizar {
+  border-radius: var(--radius-sm);
+  transition: background .15s, border-color .15s, color .15s, box-shadow .15s, transform .06s;
+}
+.admin-page--colaboradores .btn-sincronizar:hover:not(:disabled) {
+  background: #f8fafc; border-color: var(--brand); color: var(--brand-dark);
+  box-shadow: 0 2px 8px rgba(12, 119, 173, .12);
+}
+.admin-page--colaboradores .btn-sincronizar:active:not(:disabled) { transform: translateY(1px); }
+.admin-page--colaboradores .btn-sincronizar:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: -2px; }
+
+/* Cartões (filtros e tabela) no raio 14 do Portal */
+.admin-page--colaboradores .admin-filters,
+.admin-page--colaboradores .admin-card { border-radius: var(--radius); }
+
+/* Separador "·" do título ganha cor (corrige --ink-5 ausente) */
+.admin-page--colaboradores .admin-title-sep { color: var(--ink-5); }
+
+/* Anel de foco também no menu "Ações" e no fechar do modal (acessibilidade) */
+.admin-page--colaboradores .row-menu-item:focus-visible,
+.admin-page--colaboradores .modal-close:focus-visible {
+  outline: 2px solid var(--focus-ring); outline-offset: -2px;
+}
+
+/* Rodapé do card de filtros: info (contagem + última sync) à esquerda, ações à direita */
+.admin-page--colaboradores .filters-foot-info { display: flex; align-items: center; gap: 10px; min-width: 0; flex-wrap: wrap; }
+.admin-page--colaboradores .filters-foot-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.admin-page--colaboradores .filter-sync { font-size: 12px; color: var(--ink-4); white-space: nowrap; }
+.admin-page--colaboradores .filter-sync:empty { display: none; }
+.admin-page--colaboradores .filter-sync::before { content: "·"; margin-right: 10px; color: var(--ink-5); }
+
+@media (max-width: 768px) {
+  .admin-page--colaboradores .filters-foot { flex-direction: column; align-items: stretch; gap: 12px; }
+  .admin-page--colaboradores .filters-foot-actions { width: 100%; }
+  .admin-page--colaboradores .filters-foot-actions #btn-sincronizar { flex: 1; justify-content: center; }
 }
