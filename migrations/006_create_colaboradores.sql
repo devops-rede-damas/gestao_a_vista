@@ -8,6 +8,8 @@
 --     acompanha automaticamente qualquer mudanca de equipes/setores sem re-sync.
 --   * CONFIG (so o admin escreve): foto_arquivo, nome_exibicao, exibir. A sincronizacao
 --     NUNCA toca nestas colunas (UPSERT lista apenas as de espelho).
+--   * AUDITORIA (o banco escreve sozinho): criado_em e atualizado_em (ON UPDATE) carimbam
+--     a criacao e a ultima alteracao da linha — paridade com colaboradores_config.
 --
 -- Regra de ouro: colaborador que sai/incativa no Movidesk vira ativo=0 (nao e deletado),
 -- preservando foto/config caso ele retorne. Chave = id do /persons (== owner.id do ticket).
@@ -21,5 +23,6 @@ CREATE TABLE IF NOT EXISTS colaboradores (
   nome_exibicao VARCHAR(255) DEFAULT NULL,
   exibir        TINYINT(1)   NOT NULL DEFAULT 1,
   criado_em     DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  atualizado_em DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
