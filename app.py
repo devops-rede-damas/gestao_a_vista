@@ -3,7 +3,7 @@ import os
 import secrets
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import requests
 from dotenv import load_dotenv
@@ -14,6 +14,7 @@ from core.sectors import available_sectors, sector_display
 from core.setores_config import carregar_modos, carregar_equipes
 from core.avatars import carregar_catalogo
 from core.colaboradores import carregar_config as carregar_colaboradores
+from core.expediente import ExpedienteConfigError, load_expediente
 from core.webauth import auth_bp, login_obrigatorio, redirecionar_sem_acesso, resolver_usuario, setor_autorizado
 from performance_api import performance_bp
 from admin_api import admin_bp
@@ -73,8 +74,20 @@ _tickets_cache = {}  # setor -> {"data": ..., "timestamp": ...}
 _cache_lock = threading.Lock()
 
 
+def _carregar_fuso_offset_horas():
+    """Offset UTC do fuso do negócio (Recife), da fonte única config/expediente.json."""
+    try:
+        return int(load_expediente().get("fuso_utc_offset_horas", -3))
+    except (ExpedienteConfigError, TypeError, ValueError):
+        return -3
+
+
+# Deslocamento UTC->Recife para EXIBIR os prazos no horário local (Brasil sem horário de verão).
+_FUSO_OFFSET = timedelta(hours=_carregar_fuso_offset_horas())
+
+
 def _parse_movidesk_datetime(value):
-    """Converte a data naive do Movidesk em datetime; ignora a fração de segundo."""
+    """Converte a data naive-UTC do Movidesk em datetime; ignora a fração de segundo."""
     if not value:
         return None
     try:
@@ -83,28 +96,33 @@ def _parse_movidesk_datetime(value):
         return None
 
 
+def _para_local(dt_utc):
+    """Desloca um datetime naive-UTC do Movidesk para o horário de Recife."""
+    return dt_utc + _FUSO_OFFSET if dt_utc else None
+
+
 def _format_br_datetime(value):
-    """Formata a data naive do Movidesk como dd/mm/aaaa HH:MM, sem deslocar o fuso."""
-    dt = _parse_movidesk_datetime(value)
+    """Formata o prazo do Movidesk (naive-UTC) como dd/mm/aaaa HH:MM no horário de Recife."""
+    dt = _para_local(_parse_movidesk_datetime(value))
     return dt.strftime("%d/%m/%Y %H:%M") if dt else None
 
 
-def _sla_status(ticket, now):
-    """Classifica o SLA da 1a resposta (semantica do piloto, sem o bug de -3h)."""
+def _sla_status(ticket, agora_local):
+    """Classifica o SLA da 1a resposta comparando prazo e 'agora' no mesmo fuso (Recife)."""
     respondido = bool(ticket.get("slaRealResponseDate"))
-    prazo = _parse_movidesk_datetime(ticket.get("slaResponseDate"))
+    prazo = _para_local(_parse_movidesk_datetime(ticket.get("slaResponseDate")))
     if not respondido and prazo is not None:
-        return "SLA a Vencer" if prazo > now else "SLA Vencido"
+        return "SLA a Vencer" if prazo > agora_local else "SLA Vencido"
     if (ticket.get("baseStatus") or "").lower() == "new":
         return "Ticket Novo"
     return ""
 
 
 def _enrich_tickets(tickets):
-    now = datetime.now()
+    agora_local = _para_local(datetime.now(timezone.utc).replace(tzinfo=None))
     for ticket in tickets:
         ticket["slaResponseDateFmt"] = _format_br_datetime(ticket.get("slaResponseDate"))
-        ticket["slaStatus"] = _sla_status(ticket, now)
+        ticket["slaStatus"] = _sla_status(ticket, agora_local)
 
 
 def _get_tickets_cached(setor="ti"):
