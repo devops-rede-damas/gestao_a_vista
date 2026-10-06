@@ -127,6 +127,68 @@ def get_agentes(session=None, page_size=1000, max_pages=10):
     return coletados
 
 
+# $select do espelho de tickets (tabela tickets_espelho): todos os campos que o sync
+# grava, incluindo lastUpdate (chave do incremental). O dono/criador/cliente vêm no
+# $expand. A cópia crua (dados_json) garante os demais campos sem custo extra.
+_ESPELHO_SELECT = (
+    "id,type,subject,category,urgency,origin,status,baseStatus,ownerTeam,"
+    "serviceFirstLevel,serviceSecondLevel,serviceThirdLevel,"
+    "createdDate,slaRealResponseDate,resolvedIn,closedIn,canceledIn,reopenedIn,"
+    "lastActionDate,lastUpdate,"
+    "slaResponseDate,slaResponseTime,slaSolutionDate,slaSolutionTime,"
+    "slaSolutionChangedByUser,slaSolutionDateIsPaused,resolvedInFirstCall"
+)
+_ESPELHO_EXPAND = (
+    "owner($select=id,businessName),"
+    "createdBy($select=businessName),"
+    "clients($select=businessName)"
+)
+
+
+def iter_tickets_espelho(desde=None, session=None, page_size=1000, max_paginas=500):
+    """Gera, página a página, os tickets para o ESPELHO local (tabela tickets_espelho).
+
+    Read-only, SEM recorte de setor (o espelho é de TODOS os setores; o recorte por
+    setor é derivado na leitura, via setores_de). <desde> (datetime UTC) ativa o modo
+    INCREMENTAL: só tickets com lastUpdate >= <desde> (quem chamou deve aplicar uma
+    pequena sobreposição de segurança). <desde>=None é o BACKFILL: varre tudo que a
+    API enxerga.
+
+    É um GERADOR (yield de uma página por vez) para o consumidor gravar cada página
+    assim que ela chega: se a API falhar no meio, o progresso parcial já está salvo
+    e a memória fica constante. A paginação é POR CHAVE (id gt <último id da página
+    anterior>, ordenado por id), NÃO por $skip — a API do Movidesk retorna 500 em
+    $skip profundo (observado a partir de $skip=15000). <session> opcional
+    reaproveita a conexão.
+    """
+    http = session or requests
+    ultimo_id = 0
+    filtro_desde = (
+        f"lastUpdate ge {desde.strftime('%Y-%m-%dT%H:%M:%SZ')}" if desde else None
+    )
+    for _ in range(max_paginas):
+        filtros = [f"id gt {ultimo_id}"]
+        if filtro_desde:
+            filtros.append(filtro_desde)
+        params = {
+            "token": os.getenv("MOVIDESK_TOKEN"),
+            "$select": _ESPELHO_SELECT,
+            "$expand": _ESPELHO_EXPAND,
+            "$filter": " and ".join(filtros),
+            "$orderby": "id asc",
+            "$top": page_size,
+        }
+        response = http.get(BASE_URL, params=params, timeout=60)
+        response.raise_for_status()
+        lote = response.json()
+        if not lote:
+            break
+        yield lote
+        ultimo_id = max(int(t["id"]) for t in lote)
+        if len(lote) < page_size:
+            break
+
+
 def get_setor_team_names(setor, desde, session=None, page_size=1000, max_pages=30):
     """Nomes de equipe (ownerTeam) DISTINTOS de um setor numa janela histórica.
 
